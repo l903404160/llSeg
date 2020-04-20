@@ -5,7 +5,8 @@ This repo is constructed for reproducing many interesting DL algorithms. Now it 
 ## Semantic Segmentation
 |Name| Performance|
 |-|-|
-|Res-101-S-16| 75.1%|
+|Res-101-S-16| 75.1%  |
+|Res-101-S-8 | pending|
 
 > Tips: It is not easy to use in just one line command. May you need to be clear about `detectron2`.
 
