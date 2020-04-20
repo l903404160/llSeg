@@ -7,6 +7,7 @@ This repo is constructed for reproducing many interesting DL algorithms. Now it 
 |-|-|
 |Res-101-S-16| 75.1%|
 
+> Tips: It is not easy to use in just one line command. May you need to be clear about `detectron2`.
 
 >Refs:
 > 1. [detectron2](https://github.com/facebookresearch/detectron2)
