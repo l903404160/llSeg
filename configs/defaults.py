@@ -8,9 +8,11 @@ _C.CUDNN_BENCHMARK = False
 _C.SEED = -1
 
 _C.DATASETS = CN()
-_C.DATASETS.ROOT = '/root'
+_C.DATASETS.ROOT = '/home/haida_sunxin/lqx/data/'
 _C.DATASETS.TRAIN = ['cityscapes_fine_seg_train']
 _C.DATASETS.TEST = ['cityscapes_fine_seg_val']
+_C.DATASETS.RESIZE_SHORT_EDGE = False
+_C.DATASETS.SHORTEST_EDGE = 480
 
 _C.DATALOADER = CN()
 _C.DATALOADER.NUM_WORKERS = 8
@@ -20,9 +22,7 @@ _C.INPUT = CN()
 _C.INPUT.WIDTH_TRAIN = 2048
 _C.INPUT.HEIGHT_TRAIN = 1024
 _C.INPUT.SCALES_TRAIN = [1.0, 1.25, 1.5]
-_C.INPUT.WIDTH_TEST = 2048
-_C.INPUT.HEIGHT_TEST = 1024
-_C.INPUT.SCALES_TEST = [1.0]
+_C.INPUT.SCALES_TEST = [1.0] # This is always set to be [1.0] # TODO change the test loader
 _C.INPUT.IMG_FORMAT = 'RGB'
 _C.INPUT.LBL_FORMAT = 'L'
 
@@ -73,8 +73,11 @@ _C.TEST.EVAL_PERIOD = 0
 
 _C.TEST.PRECISE_BN = CN({"ENABLED": False})
 _C.TEST.PRECISE_BN.NUM_ITER = 200
+_C.TEST.AUG = False
+_C.TEST.SCALES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+_C.TEST.FLIP = False
 
 # For end-to-end tests to verify the expected accuracy.
 # Each item is [task, metric, value, tolerance]
 # e.g.: [['bbox', 'AP', 38.5, 0.2]]
-_C.TEST.EXPECTED_RESULTS = []
+_C.TEST_EXPECTED_RESULTS = []

@@ -1,12 +1,13 @@
 from utils.checkpointers.checkpoint import Checkopointer
 from .functional import align_and_update_state_dicts
 from typing import Any
+import utils.comm as comm
 
 
 class TrackingCheckpoint(Checkopointer):
     def __init__(self, model, save_dir="", *, save_to_disk=None, **checkpointables):
         # TODO: change the is main process
-        is_main_process = True
+        is_main_process = comm.is_main_process()
         super().__init__(
             model,
             save_dir,

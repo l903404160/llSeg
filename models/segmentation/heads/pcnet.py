@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from . import SEG_HEAD_REGISTRY
+from models.losses import get_loss_from_cfg
+
 
 class RtHighFeatureFusion(nn.Module):
     def __init__(self, dim_high, dim_low, dim_out, expand_ratio=3):
@@ -99,10 +101,16 @@ class PCHead(nn.Module):
         super(PCHead, self).__init__()
         self.feature_fusion = RtHighFeatureFusion(dim_high=128, dim_low=64, dim_out=128)
         self.classifier = RtClassifer_decoder(cfg.MODEL.NUM_CLASSES, dim_low=64, dim_high=128)
+        self.loss_fn = get_loss_from_cfg(cfg)
 
-    def forward(self, feats):
+    def _compute_loss(self, pred, label):
+        loss = self.loss_fn(pred, label)
+        return loss
+
+    def forward(self, feats, label=None):
         """
         :param feats: {'spatial', 'fea_16x', 'fea_32x'}
+        :param label: Long Tensor
         :return: pred
         """
         spatial = feats['spatial']
@@ -111,7 +119,12 @@ class PCHead(nn.Module):
         pred_high = self.feature_fusion(fea_16x, fea_32x)
 
         pred = self.classifier(spatial, pred_high)
-        return pred
+        if label is None:
+            return pred
+        size = label.size()[-2:]
+        pred = F.interpolate(pred, size, mode='bilinear', align_corners=True)
+        return self._compute_loss(pred, label)
+
 
 
 @SEG_HEAD_REGISTRY.register()

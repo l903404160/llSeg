@@ -2,13 +2,18 @@ from configs import get_config, CfgNode
 
 
 PCNet_config = get_config()
+PCNet_config.DATASETS.TRAIN = ['suim_seg_trainval']
+PCNet_config.DATASETS.TEST = ['suim_seg_test']
+PCNet_config.DATASETS.RESIZE_SHORT_EDGE = True
+PCNet_config.DATASETS.SHORTEST_EDGE = 480
+
 
 PCNet_config.MODEL = CfgNode()
 PCNet_config.MODEL.NAME = 'PCNet'
 PCNet_config.MODEL.BUILDER = 'segmentation_builder'
-PCNet_config.MODEL.WEIGHTS = ''
+PCNet_config.MODEL.WEIGHTS = ''# '/root/codes/vot/exp/output_dir/model_0029999.pth'
 PCNet_config.MODEL.DEVICE = "cuda"
-PCNet_config.MODEL.NUM_CLASSES = 19
+PCNet_config.MODEL.NUM_CLASSES = 8
 PCNet_config.MODEL.IGNORE_LABEL = 255
 
 # Values to be used for image normalization (BGR order, since INPUT.FORMAT defaults to BGR).
@@ -25,14 +30,21 @@ PCNet_config.MODEL.BACKBONE.NAME = "pcnet_builder"
 
 PCNet_config.MODEL.HEAD = CfgNode()
 PCNet_config.MODEL.HEAD.NAME = "pchead_builder"
+PCNet_config.MODEL.HEAD.LOSS = 'OHEMCELoss' # ['CELoss', 'OHEMCELoss']
+PCNet_config.MODEL.HEAD.LOSS_THRESH = 0.7
+PCNet_config.MODEL.HEAD.LOSS_MIN_KEPT = 100000
+PCNet_config.MODEL.HEAD.LOSS_WEIGHTS = []
+PCNet_config.MODEL.HEAD.LOSS_REDUCTION = 'mean'
 PCNet_config.MODEL.HEAD.AUX_LOSS = False
+
 # Input
-PCNet_config.INPUT.WIDTH_TRAIN = 1024
-PCNet_config.INPUT.HEIGHT_TRAIN = 512
-PCNet_config.INPUT.SCALES_TRAIN = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0] #
-PCNet_config.INPUT.WIDTH_TEST = 2048
-PCNet_config.INPUT.HEIGHT_TEST = 1024
+PCNet_config.INPUT.WIDTH_TRAIN = 480
+PCNet_config.INPUT.HEIGHT_TRAIN = 480
+PCNet_config.INPUT.SCALES_TRAIN = [1.0, 1.25, 1.5, 1.75, 2.0]
 PCNet_config.INPUT.SCALES_TEST = [1.0]
+PCNet_config.INPUT.MIN_SIZE_TEST = 480
+PCNet_config.INPUT.MAX_SIZE_TEST = 1000
+PCNet_config.INPUT.FORMAT = 'RGB'
 
 
 # SOLVER
@@ -40,7 +52,7 @@ PCNet_config.SOLVER.BASE_LR = 0.01
 PCNet_config.SOLVER.LR_SCHEDULER_NAME = "WarmupPolyLR"
 PCNet_config.SOLVER.POWER = 0.9
 PCNet_config.SOLVER.IMS_PER_BATCH = 16
-PCNet_config.SOLVER.MAX_ITER = 180000  # 90000
-PCNet_config.SOLVER.STEPS = (10,)  # 60000
-PCNet_config.SOLVER.GAMMA = 0.1
+PCNet_config.SOLVER.MAX_ITER = 30000  # 90000
 PCNet_config.SOLVER.WEIGHT_DECAY = 5e-4
+
+PCNet_config.TEST.SCALES = [1.5, 1.75, 2.0]

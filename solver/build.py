@@ -14,6 +14,7 @@ class GradientClipType(Enum):
     VALUE = "value"
     NORM = "norm"
 
+
 def _create_gradient_clipper(cfg: CfgNode) -> _GradientClipper:
     """
     Creates gradient clipping closure to clip by value or by norm,

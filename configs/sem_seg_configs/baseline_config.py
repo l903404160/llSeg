@@ -33,18 +33,22 @@ BS_config.MODEL.BACKBONE = CfgNode()
 BS_config.MODEL.BACKBONE.NAME = "resnet_builder"
 BS_config.MODEL.BACKBONE.MULTI_GRIDS = [1, 1, 1]
 
+# HEAD Setting
 BS_config.MODEL.HEAD = CfgNode()
 BS_config.MODEL.HEAD.NAME = "plainhead_builder"
+BS_config.MODEL.HEAD.LOSS = 'OHEMCELoss'
+BS_config.MODEL.HEAD.LOSS_THRESH = 0.7
+BS_config.MODEL.HEAD.LOSS_MIN_KEPT = 100000
+BS_config.MODEL.HEAD.LOSS_WEIGHTS = []
+BS_config.MODEL.HEAD.LOSS_REDUCTION = 'mean'
 BS_config.MODEL.HEAD.AUX_LOSS = True
 BS_config.MODEL.HEAD.AUX_LOSS_WEIGHT = 0.4
+
 # Input
 BS_config.INPUT.WIDTH_TRAIN = 768
 BS_config.INPUT.HEIGHT_TRAIN = 768
 BS_config.INPUT.SCALES_TRAIN = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
-BS_config.INPUT.WIDTH_TEST = 2048
-BS_config.INPUT.HEIGHT_TEST = 1024
 BS_config.INPUT.SCALES_TEST = [1.0]
-
 
 # SOLVER
 BS_config.SOLVER.BASE_LR = 0.01
@@ -52,5 +56,10 @@ BS_config.SOLVER.LR_SCHEDULER_NAME = "WarmupPolyLR"
 BS_config.SOLVER.POWER = 0.9
 BS_config.SOLVER.IMS_PER_BATCH = 4
 BS_config.SOLVER.MAX_ITER = 60000  # 90000
-BS_config.SOLVER.STEPS = (10,)  # 60000
-BS_config.SOLVER.GAMMA = 0.1
+
+# TEST
+BS_config.TEST.AUG = True
+BS_config.TEST.SCALES = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+# TODO: check if flip is useful or not Now the flip will decrease the performance
+BS_config.TEST.FLIP = False
+

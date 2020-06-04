@@ -17,7 +17,7 @@ from datasets.transforms.base import (
 )
 from PIL import Image
 
-from .transforms import ExtentTransform, ResizeTransform
+from .transforms import ExtentTransform, ResizeTransform, PadCropTransform
 
 __all__ = [
     "RandomBrightness",
@@ -160,6 +160,7 @@ class Resize(TransformGen):
             img.shape[0], img.shape[1], self.shape[0], self.shape[1], self.interp
         )
 
+
 class ResizeFromScales(TransformGen):
     """
     Scale the shorter edge to the given size, with a limit of `max_size` on the longer edge.
@@ -167,7 +168,7 @@ class ResizeFromScales(TransformGen):
     """
 
     def __init__(
-        self, scales, interp=Image.BILINEAR
+        self, scales, interp=Image.BILINEAR, short_edge_length=None
     ):
         """
         Args:
@@ -176,6 +177,7 @@ class ResizeFromScales(TransformGen):
         super().__init__()
         self.scales = scales
         self.interp = interp
+        self.short_edge_length = short_edge_length
         self._init(locals())
 
     def get_transform(self, img):
@@ -185,6 +187,7 @@ class ResizeFromScales(TransformGen):
 
         neww = int(neww + 0.5)
         newh = int(newh + 0.5)
+
         return ResizeTransform(h, w, newh, neww, self.interp)
 
 
@@ -257,6 +260,11 @@ class RandomCrop(TransformGen):
     def get_transform(self, img):
         h, w = img.shape[:2]
         croph, cropw = self.get_crop_size((h, w))
+
+        if h < croph or w < cropw:
+            pad_h, pad_w = max(croph - h, 0), max(cropw - w, 0)
+            return PadCropTransform(pad_w, pad_h, cropw, croph)
+
         assert h >= croph and w >= cropw, "Shape computation in {} has bugs.".format(self)
         h0 = np.random.randint(h - croph + 1)
         w0 = np.random.randint(w - cropw + 1)

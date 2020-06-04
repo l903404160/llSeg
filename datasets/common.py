@@ -23,9 +23,6 @@ class MapDataset(data.Dataset):
         return len(self._dataset)
 
     def __getitem__(self, idx):
-        # TODO there is some different with detectron2
-        retry_count = 0
-        cur_idx = int(idx)
         data = self._map_func(self._dataset[idx])
         return data
 

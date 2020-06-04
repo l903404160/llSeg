@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from . import SEG_HEAD_REGISTRY
 
-from models.losses import cross_entropy_loss
+from models.losses import get_loss_from_cfg
 
 
 class PlainHead(nn.Module):
@@ -16,6 +16,8 @@ class PlainHead(nn.Module):
             nn.Dropout2d(0.05),
             nn.Conv2d(512, cfg.MODEL.NUM_CLASSES, kernel_size=1, stride=1, padding=0, bias=True)
         )
+
+        self.loss_fn = get_loss_from_cfg(cfg)
 
         self.aux_loss = False
         if cfg.MODEL.HEAD.AUX_LOSS:
@@ -32,11 +34,11 @@ class PlainHead(nn.Module):
     def _compute_loss(self, pred, label):
         if self.aux_loss:
             pred, aux_pred = pred
-            loss = cross_entropy_loss(pred, label)
-            aux_loss = cross_entropy_loss(aux_pred, label)
+            loss = self.loss_fn(pred, label)
+            aux_loss = self.loss_fn(aux_pred, label)
             return loss + self.aux_weight * aux_loss
         else:
-            loss = cross_entropy_loss(pred, label)
+            loss = self.loss_fn(pred, label)
             return loss
 
     def forward(self, data_input, label=None):

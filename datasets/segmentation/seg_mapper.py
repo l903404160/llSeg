@@ -21,7 +21,6 @@ class SegDatasetMapper(object):
         :return: dict contain image and label data
         """
         dataset_dict = copy.deepcopy(dataset_dict)
-
         image = utils.read_image(dataset_dict['file_name'], format=self.img_format)
         label = utils.read_image(dataset_dict['sem_seg_file_name'], format=self.lbl_format)
 
@@ -52,29 +51,33 @@ class SegDatasetMapper(object):
             width = cfg.INPUT.WIDTH_TRAIN
             scales = cfg.INPUT.SCALES_TRAIN
         else:
-            height = cfg.INPUT.HEIGHT_TEST
-            width = cfg.INPUT.WIDTH_TEST
             scales = cfg.INPUT.SCALES_TEST
 
         logger = logging.getLogger("OUCWheel."+__name__)
         tfm_gens = []
-        tfm_gens.append(T.ResizeFromScales(scales=scales))
         if is_train:
+            tfm_gens.append(T.RandomBrightness(intensity_min=0.5, intensity_max=1.5))
+            tfm_gens.append(T.RandomContrast(intensity_min=0.5, intensity_max=1.5))
+            tfm_gens.append(T.RandomSaturation(intensity_min=0.5, intensity_max=1.5))
             tfm_gens.append(T.RandomFlip())
+            tfm_gens.append(T.ResizeFromScales(scales=scales)) #
             tfm_gens.append(T.RandomCrop(crop_type='absolute', crop_size=(height, width)))
             logger.info("TransformGens used in training: " + str(tfm_gens))
+        else:
+            tfm_gens.append(T.ResizeFromScales(scales=scales))
         return tfm_gens
 
 if __name__ == '__main__':
     data_dict = {
-        'image': '/root/cityscapes/leftImg8bit/val/frankfurt/frankfurt_000001_083852_leftImg8bit.png',
-        'anno': '/root/cityscapes/gtFine/val/frankfurt/frankfurt_000001_083852_gtFine_labelTrainIds.png',
+        'file_name': '/home/haida_sunxin/lqx/data/city/leftImg8bit/val/frankfurt/frankfurt_000001_083852_leftImg8bit.png',
+        'sem_seg_file_name': '/home/haida_sunxin/lqx/data/city/gtFine/val/frankfurt/frankfurt_000001_083852_gtFine_labelTrainIds.png',
         'info':{
             'height':100,
             'width':200
         }
     }
     from configs.defaults import _C as cfg
-    mapper = SegDatasetMapper(cfg, False)
-    data = mapper(data_dict)
+    mapper = SegDatasetMapper(cfg, True)
+    label = utils.read_image(data_dict['sem_seg_file_name'], format='L')
+
     print('hah')
