@@ -148,6 +148,10 @@ class APNB(nn.Module):
         output = self.conv_bn_dropout(torch.cat([context, feats], 1))
         return output
 
+
+
+
+
 if __name__ == '__main__':
     m = APNB(in_channels=512, out_channels=512, key_channels=256, value_channels=256, norm_type='SyncBN', dropout=0.05)
     x = torch.randn(2, 512, 64, 64)

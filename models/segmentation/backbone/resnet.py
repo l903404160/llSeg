@@ -1,6 +1,5 @@
 import torch.nn as nn
 import math
-import torch
 from torch.nn.modules.batchnorm import _BatchNorm
 
 from . import SEG_BACKBONE_REGISTRY
@@ -106,12 +105,16 @@ class ResNet(nn.Module):
         if grids is None:
             grids = [1] * blocks
 
-        if dilation == 1 or dilation == 2:
+        if dilation == 1:
             layers.append(block(self.inplanes, planes, stride, dilation=1,
                                 downsample=downsample,
                                 previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
-        elif dilation == 4:
+        elif dilation == 2:
             layers.append(block(self.inplanes, planes, stride, dilation=2,
+                                downsample=downsample,
+                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
+        elif dilation == 4:
+            layers.append(block(self.inplanes, planes, stride, dilation=4,
                                 downsample=downsample,
                                 previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
         else:

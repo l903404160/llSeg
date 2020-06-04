@@ -4,6 +4,9 @@ import time
 from collections import OrderedDict
 from contextlib import contextmanager
 import torch
+import PIL.Image as Image
+import numpy as np
+from torch.nn.functional import interpolate
 
 from utils.comm import get_world_size, is_main_process
 from utils.logger import log_every_n_seconds
@@ -53,6 +56,7 @@ class DatasetEvaluator:
         """
         pass
 
+
 class DatasetEvaluators(DatasetEvaluator):
     def __init__(self, evaluators):
         super().__init__()
@@ -78,6 +82,95 @@ class DatasetEvaluators(DatasetEvaluator):
 
                     results[k] = v
         return results
+
+
+def inference_on_dataset_with_multi_scale(model, data_loader, evaluator, scales=None):
+    """
+    Run model on the data_loader and evaluate the metrics with evaluator.
+    Also benchmark the inference speed of `model.forward` accurately
+    The model will be used in eval mode.
+    Eache item will be scaled first and then compute the final results.
+
+    :param model: the model will be temporarily set to 'eval' model
+    :param data_loader: an iterable object with a length
+    :param evaluator: the evaluator to run
+    :param scales: [0.5, 0.75 ...]
+    :return: the return value of 'evaluator.evaluate()'
+    """
+
+
+    if scales is None:
+        scales = [1.]
+    num_devices = get_world_size()
+    logger = logging.getLogger("OUCWheel."+__name__)
+
+    logger.info("Start Multi Scale inference on {} images".format(len(data_loader)))
+    total = len(data_loader)
+    if evaluator is None:
+        evaluator = DatasetEvaluators([])
+    evaluator.reset()
+
+    num_warmup = min(5, total - 1)
+    start_time = time.perf_counter()
+    total_compute_time = 0
+    with inference_context(model), torch.no_grad():
+        for idx, inputs in enumerate(data_loader):
+            if idx == num_warmup:
+                start_time = time.perf_counter()
+                total_compute_time = 0
+            start_compute_time = time.perf_counter()
+            # TODO May need change the inference interface
+            # TODO Make multi scale inputs
+            h, w = inputs['height'], inputs['width']
+            outputs = []
+            for scale in scales:
+                # Norm
+                inputs['scale'] = scale
+                inputs['flip'] = False
+                norm_out = model(inputs)
+                # Flip
+                # inputs['flip'] = True
+                # flip_out = model(inputs)
+                # flip_out['seg_seg'] = torch.flip(flip_out['sem_seg'], dims=(3,))
+                # out = 0.5 * (norm_out['sem_seg'] + flip_out['sem_seg'])
+                out = norm_out['sem_seg']
+                outputs.append(interpolate(out, size=(h, w), mode='bilinear', align_corners=True))
+            outputs = torch.cat(outputs, dim=0).mean(dim=0, keepdim=True)
+            outputs = torch.max(outputs, dim=1)[1]
+            outputs = {'sem_seg': outputs}
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+            total_compute_time += time.perf_counter() - start_compute_time
+            evaluator.process(inputs, outputs)
+
+            iters_after_start = idx + 1 - num_warmup * int(idx >= num_warmup)
+            seconds_per_img = total_compute_time / iters_after_start
+            if idx >= num_warmup * 2 or seconds_per_img > 5:
+                total_seconds_per_img = (time.perf_counter() - start_time) / iters_after_start
+                eta = datetime.timedelta(seconds=int(total_seconds_per_img * (total - idx - 1)))
+                log_every_n_seconds(
+                    logging.INFO,
+                    "Inference done {}/{}. {:.4f} s / img ETA={}".format(
+                        idx + 1, total, seconds_per_img, str(eta)
+                    ),
+                    n=5,
+                )
+
+    # Mesure the time only for this worker (before the synchronization barrier)
+    total_time = time.perf_counter() - start_time
+    total_time_str = str(datetime.timedelta(seconds=total_time))
+    # NOTE this format is parsed by grep
+    logger.info(
+        "Total inference time :{} ({:.6f}s /image per device, on {} devices)".format(
+            total_time_str, total_time / (total - num_warmup), num_devices
+        )
+    )
+    results = evaluator.evaluate()
+    # An evaluator may return None when not in main process
+    # Replace it by an empty dict insted to make it easier for downstream code to handle
+    if results is None:
+        results = {}
+    return results
 
 
 def inference_on_dataset(model, data_loader, evaluator):
@@ -111,9 +204,11 @@ def inference_on_dataset(model, data_loader, evaluator):
             start_compute_time = time.perf_counter()
             # TODO May need change the inference interface
             outputs = model(inputs)
+            outputs['sem_seg'] = torch.max(outputs['sem_seg'], dim=1)[1]
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
+
             evaluator.process(inputs, outputs)
 
             iters_after_start = idx + 1 - num_warmup * int(idx >=num_warmup)
@@ -144,6 +239,7 @@ def inference_on_dataset(model, data_loader, evaluator):
     if results is None:
         results = {}
     return results
+
 
 @contextmanager
 def inference_context(model):

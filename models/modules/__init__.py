@@ -1,2 +1,2 @@
-from .non_local import NonLocalLayer, EmbededNonLocalLayer
+from .non_local import *
 from .ann import APNB

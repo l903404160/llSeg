@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.nn.modules.batchnorm import _BatchNorm
 from . import SEG_HEAD_REGISTRY
 
-from models.losses import cross_entropy_loss
+from models.losses import get_loss_from_cfg
 
 
 from utils.comm import all_gather
@@ -119,9 +119,10 @@ class EMAHead(nn.Module):
             ConvBNReLU(512, 256, 3, 1, 1, 1, norm_layer=norm_layer, norm_mom=norm_mom),
             nn.Dropout2d(p=0.1))
         self.fc2 = nn.Conv2d(256, cfg.MODEL.NUM_CLASSES, 1)
+        self.loss_fn = get_loss_from_cfg(cfg)
 
     def _compute_loss(self, pred, label):
-        return cross_entropy_loss(pred, label)
+        return self.loss_fn(pred, label)
 
     def forward(self, x, label=None):
         x = self.fc0(x['res4'])

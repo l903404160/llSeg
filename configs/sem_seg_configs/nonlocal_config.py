@@ -7,7 +7,7 @@ NL_config.OUTPUT_DIR = './output_dir'
 NL_config.MODEL = CfgNode()
 NL_config.MODEL.NAME = 'NonlocalNet'
 NL_config.MODEL.BUILDER = 'segmentation_builder'
-NL_config.MODEL.WEIGHTS = '/root/models/baseline_res_101.pth'
+NL_config.MODEL.WEIGHTS = '../ext/models/baseline_res_101.pth'
 NL_config.MODEL.DEVICE = "cuda"
 NL_config.MODEL.NUM_CLASSES = 19
 NL_config.MODEL.N_LAYERS = 101
@@ -36,6 +36,11 @@ NL_config.MODEL.BACKBONE.MULTI_GRIDS = [1, 1, 1]
 
 NL_config.MODEL.HEAD = CfgNode()
 NL_config.MODEL.HEAD.NAME = "nlhead_builder"
+NL_config.MODEL.HEAD.LOSS = 'OHEMCELoss'
+NL_config.MODEL.HEAD.LOSS_THRESH = 0.7
+NL_config.MODEL.HEAD.LOSS_MIN_KEPT = 100000
+NL_config.MODEL.HEAD.LOSS_WEIGHTS = []
+NL_config.MODEL.HEAD.LOSS_REDUCTION = 'mean'
 NL_config.MODEL.HEAD.AUX_LOSS = True
 NL_config.MODEL.HEAD.AUX_LOSS_WEIGHT = 0.4
 # NL settings
@@ -47,8 +52,6 @@ NL_config.MODEL.HEAD.NL_OUTPUT = 512
 NL_config.INPUT.WIDTH_TRAIN = 768
 NL_config.INPUT.HEIGHT_TRAIN = 768
 NL_config.INPUT.SCALES_TRAIN = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
-NL_config.INPUT.WIDTH_TEST = 2048
-NL_config.INPUT.HEIGHT_TEST = 1024
 NL_config.INPUT.SCALES_TEST = [1.0]
 
 
@@ -58,5 +61,4 @@ NL_config.SOLVER.LR_SCHEDULER_NAME = "WarmupPolyLR"
 NL_config.SOLVER.POWER = 0.9
 NL_config.SOLVER.IMS_PER_BATCH = 4
 NL_config.SOLVER.MAX_ITER = 60000  # 90000
-NL_config.SOLVER.STEPS = (10,)  # 60000
-NL_config.SOLVER.GAMMA = 0.1
+

@@ -7,6 +7,7 @@ import argparse
 
 import utils.comm as comm
 
+import datasets.transforms.transforms_gen as T
 from collections import OrderedDict
 from utils.logger import setup_logger
 from utils.collect_env import collect_env_info
@@ -18,10 +19,10 @@ from torch.nn.parallel import DistributedDataParallel
 
 from models import model_builder
 from solver import build_optimizer, build_lr_scheduler
-from utils.checkpointers.tracking import TrackingCheckpoint
+from utils.checkpointers.generic import GenericCheckpoint
 from .train_loop import SimpleTrainer
 from . import hooks
-from evaluation.evaluator import DatasetEvaluator, inference_on_dataset
+from evaluation.evaluator import DatasetEvaluator, inference_on_dataset, inference_on_dataset_with_multi_scale
 from evaluation.testing import verify_results, print_csv_format
 
 
@@ -105,7 +106,7 @@ def default_setup(cfg, args):
 class DefaultPredictor:
     """
     TODO: change the description to my implementation
-    Create a simple end-to-end predictor with the given config that runs on simgle
+    Create a simple end-to-end predictor with the given config that runs on single
     device for a single input image
 
     compared to using the model directly, this class does the following additions
@@ -132,7 +133,7 @@ class DefaultPredictor:
         self.model.eval()
         # self.metadata =  TODO metadata
 
-        checkpointer = TrackingCheckpoint(self.model)
+        checkpointer = GenericCheckpoint(self.model)
         checkpointer.load(cfg.MODEL.WEIGHTS)
         # TODO import T
         self.transform_gen = T.ResizeShortestEdge(
@@ -147,15 +148,26 @@ class DefaultPredictor:
         :return: predictions
         """
         with torch.no_grad():
-            # TODO change the prediction logic, after complete the trainer
             if self.input_format == "RGB":
-                original_image = original_image[:,:, ::-1]
+                original_image = original_image[:,:,::-1]
             height, width = original_image.shape[:2]
             image = self.transform_gen.get_transform(original_image).apply_image(original_image)
-            image = torch.as_tensor(image.astype("float32").transpose(2,0,1))
+
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
             inputs = {'image': image, 'height': height, 'width': width}
-            predictions = self.model([inputs])[0]
+            predictions = self.model(inputs)['sem_seg']
             return predictions
+
+        # with torch.no_grad():
+        #     # TODO change the prediction logic, after complete the trainer
+        #     if self.input_format == "RGB":
+        #         original_image = original_image[:,:, ::-1]
+        #     height, width = original_image.shape[:2]
+        #     image = self.transform_gen.get_transform(original_image).apply_image(original_image)
+        #     image = torch.as_tensor(image.astype("float32").transpose(2,0,1))
+        #     inputs = {'image': image, 'height': height, 'width': width}
+        #     predictions = self.model([inputs])[0]
+        #     return predictions
 
 
 class DefaultTrainer(SimpleTrainer):
@@ -220,7 +232,7 @@ class DefaultTrainer(SimpleTrainer):
         super(DefaultTrainer, self).__init__(model, data_loader, optimizer)
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
-        self.checkpointer = TrackingCheckpoint(
+        self.checkpointer = GenericCheckpoint(
             model,
             cfg.OUTPUT_DIR,
             optimizer=optimizer,
@@ -320,7 +332,7 @@ class DefaultTrainer(SimpleTrainer):
 
     def train(self):
         super().train(self.start_iter, self.max_iter)
-        if len(self.cfg.TEST.EXPECTED_RESULTS) and comm.is_main_process():
+        if len(self.cfg.TEST_EXPECTED_RESULTS) and comm.is_main_process():
             assert hasattr(
                 self, "_last_eval_results"
             ), "No evaluation results obtained during training!"
@@ -436,6 +448,59 @@ class DefaultTrainer(SimpleTrainer):
                     results[dataset_name] = {}
                     continue
             results_i = inference_on_dataset(model, data_loader, evaluator)
+            results[dataset_name] = results_i
+            if comm.is_main_process():
+                assert isinstance(
+                    results_i, dict
+                ), "Evaluator must return a dict on the main process. Got {} instead.".format(
+                    results_i
+                )
+                logger.info("Evaluation results for {} in csv format:".format(dataset_name))
+                print_csv_format(results_i)
+
+        if len(results) == 1:
+            results = list(results.values())[0]
+        return results
+
+    @classmethod
+    def test_multi_scale(cls, cfg, model, evaluators=None):
+        """
+        Args:
+            cfg (CfgNode):
+            model (nn.Module):
+            evaluators (list[DatasetEvaluator] or None): if None, will call
+                :meth:`build_evaluator`. Otherwise, must have the same length as
+                `cfg.DATASETS.TEST`.
+        Returns:
+            dict: a dict of result metrics
+        """
+        logger = logging.getLogger('OUCWheel.'+__name__)
+        if isinstance(evaluators, DatasetEvaluator):
+            evaluators = [evaluators]
+        if evaluators is not None:
+            assert len(cfg.DATASETS.TEST) == len(evaluators), "{} != {}".format(
+                len(cfg.DATASETS.TEST), len(evaluators)
+            )
+
+        results = OrderedDict()
+        for idx, dataset_name in enumerate(cfg.DATASETS.TEST):
+            data_loader = cls.build_test_loader(cfg, dataset_name)
+            # When evaluators are passed in as arguments,
+            # implicitly assume that evaluators can be created before data_loader.
+            if evaluators is not None:
+                evaluator = evaluators[idx]
+            else:
+                try:
+                    evaluator = cls.build_evaluator(cfg, dataset_name)
+                except NotImplementedError:
+                    logger.warning(
+                        "No evaluator found. Use `DefaultTrainer.test(evaluators=)`, "
+                        "or implement its `build_evaluator` method."
+                    )
+                    results[dataset_name] = {}
+                    continue
+            results_i = inference_on_dataset_with_multi_scale(model, data_loader, evaluator,
+                                                              scales=cfg.TEST.SCALES)
             results[dataset_name] = results_i
             if comm.is_main_process():
                 assert isinstance(

@@ -220,3 +220,22 @@ def get_norm(norm):
             "nnSyncBN":nn.SyncBatchNorm,
         }[norm]
     return norm
+
+def get_norm_with_channels(norm, out_channels):
+    """
+    Args:
+        norm (str or callable):
+    Returns:
+        nn.Module or None: the normalization layer
+    """
+    if isinstance(norm, str):
+        if len(norm) == 0:
+            return None
+        norm = {
+            "BN": BatchNorm2d,
+            "SyncBN": NaiveSyncBatchNorm,
+            "FrozenBN": FrozenBatchNorm2d,
+            "GN": lambda channels: nn.GroupNorm(32, channels),
+            "nnSyncBN": nn.SyncBatchNorm,  # keep for debugging
+        }[norm]
+    return norm(out_channels)

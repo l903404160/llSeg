@@ -7,19 +7,14 @@ import torch.nn.functional as F
 
 from models.segmentation.backbone import backbone_builder
 from models.segmentation.heads import head_builder
-from models.losses.crossentropy import cross_entropy_loss
 
 
 class GeneralSemanticSegmentationModel(nn.Module):
     def __init__(self, cfg):
         super(GeneralSemanticSegmentationModel, self).__init__()
-        """
-            cfg:
-        """
         self.device = cfg.MODEL.DEVICE
         self._cfg = cfg
         self.norm = self.preprocess_image()
-        # self.model = SEGMENTATION_REGISTRY.get(cfg.MODEL.NAME)(cfg)
 
         self.backbone = backbone_builder(cfg)
         self.head = head_builder(cfg)
@@ -35,7 +30,20 @@ class GeneralSemanticSegmentationModel(nn.Module):
         data_input = data_dict['image'].to(self.device)
         data_input = self.norm(data_input)
         size = data_input.size()[-2:]
-        label = data_dict['sem_seg'].to(self.device)
+        if 'sem_seg' not in data_dict.keys():
+            label = None
+        else:
+            label = data_dict['sem_seg'].to(self.device)
+        if 'scale' in data_dict.keys():
+            scale = data_dict['scale']
+            h, w = data_dict['height'], data_dict['width']
+            newh, neww = scale * h, scale * w
+            neww = int(neww + 0.5)
+            newh = int(newh + 0.5)
+            data_input = F.interpolate(data_input, size=(newh, neww), mode='bilinear', align_corners=True)
+            if data_dict['flip']:
+                # TODO change the flip process
+                data_input = torch.flip(data_input, dims=[3])
 
         feats = self.backbone(data_input)
         if self.training:
@@ -48,5 +56,5 @@ class GeneralSemanticSegmentationModel(nn.Module):
         else:
             pred = self.head(feats)
             pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
-            prediction = torch.max(F.softmax(pred, dim=1), dim=1)[1]
+            prediction = F.softmax(pred, dim=1)
             return {'sem_seg': prediction}
