@@ -4,7 +4,7 @@
 from utils.registry import Registry
 from models import MODEL_BUILDER_REGISTRY
 
-SEGMENTATION_REGISTRY = Registry("SEGMENTATION")
+SEGMENTATION_REGISTRY = Registry("DETECTION")
 
 
 @MODEL_BUILDER_REGISTRY.register()

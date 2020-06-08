@@ -1,6 +1,17 @@
 import torch
+from typing import List
 
 TORCH_VERSION = tuple(int(x) for x in torch.__version__.split(".")[:2])
+
+
+def cat(tensors: List[torch.Tensor], dim: int = 0):
+    """
+    Efficient version of torch.cat that avoids a copy if there is only a single element in a list
+    """
+    assert isinstance(tensors, (list, tuple))
+    if len(tensors) == 1:
+        return tensors[0]
+    return torch.cat(tensors, dim)
 
 
 class _NewEmptyTensorOp(torch.autograd.Function):

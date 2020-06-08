@@ -368,8 +368,8 @@ class ResNet(Backbone):
         }
 
 
-@DET_BACKBONE_REGISTRY.register()
-def resnet_builder(cfg, input_shape):
+
+def build_resnet(cfg, input_shape):
     """
     Create a ResNet instance from config
     :param cfg:
@@ -461,3 +461,12 @@ def resnet_builder(cfg, input_shape):
                 block.freeze()
         stages.append(blocks)
     return ResNet(stem, stages, out_features=out_features)
+
+
+@DET_BACKBONE_REGISTRY.register()
+def resnet_builder(cfg, input_shape=None):
+    if input_shape is None:
+        input_shape = ShapeSpec(channels=len(cfg.MODEL.PIXEL_MEAN))
+    backbone = build_resnet(cfg, input_shape)
+    assert isinstance(backbone, Backbone)
+    return backbone
