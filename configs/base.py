@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from yacs.config import CfgNode as _CfgNode
 
-BASE_KEY = "_BASE_"
+BASE_KEY = "__BASE__"
 
 
 class CfgNode(_CfgNode):

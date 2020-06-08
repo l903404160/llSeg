@@ -87,11 +87,11 @@ def default_setup(cfg, args):
 
     if hasattr(args, "config_file") and args.config_file != "":
         logger.info(
-            "Content of args.config_file = {}: \n {}".format(
+            "Content of args.config_file = {}: \n{}".format(
                 args.config_file, open(args.config_file, 'r').read()
             )
         )
-    logger.info("Running with full config : \n {}".format(cfg))
+    logger.info("Running with full config : \n{}".format(cfg))
     if comm.is_main_process() and output_dir:
         path = os.path.join(output_dir, "config.yaml")
         with open(path, 'w') as f:

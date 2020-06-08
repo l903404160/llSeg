@@ -1,0 +1,40 @@
+MODEL:
+  BUILDER: "segmentation_builder"
+  WEIGHTS: "/root/models/baseline_res_101.pth"
+  DEVICE: "cuda"
+  NUM_CLASSES: 19
+  N_LAYERS: 101
+  STRIDE: 16
+  BN_LAYER: "SyncBN"
+  BN_MOM: 0.1
+  IGNORE_LABEL: 255
+  PIXEL_MEAN: [123.675, 116.280, 103.530]
+  PIXEL_STD: [58.395, 57.120, 57.375]
+  BACKBONE:
+    NAME: "resnet_builder"
+    MULTI_GRIDS: [1, 1, 1]
+  HEAD:
+    NAME: "plainhead_builder"
+    LOSS: "OHEMCELoss"
+    LOSS_THRESH: 0.7
+    LOSS_MIN_KEPT: 100000
+    LOSS_WEIGHTS: []
+    LOSS_REDUCTION: "mean"
+    AUX_LOSS: True
+    AUX_LOSS_WEIGHT: 0.4
+INPUT:
+  WIDTH_TRAIN: 768
+  HEIGHT_TRAIN: 768
+  SCALES_TRAIN: [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+  SCALES_TEST: [1.0]
+SOLVER:
+  BASE_LR: 0.01
+  LR_SCHEDULER_NAME: "WarmupPolyLR"
+  POWER: 0.9
+  IMS_PER_BATCH: 2
+  MAX_ITER: 60000
+
+TEST:
+  AUG: True
+  SCALES: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+  FLIP: False
