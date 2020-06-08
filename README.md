@@ -2,6 +2,8 @@
 
 This repo is constructed for reproducing many interesting DL algorithms. Now it is still improving and I will check the model performance as soon as possible.
 
+# Status: <font color=red> Constructing </font>
+
 ## Semantic Segmentation
 |Name| Performance|
 |-|-|

@@ -1,0 +1,15 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/seg_base.yaml"
+
+MODEL:
+  STRIDE: 8
+  WEIGHTS: "/home/haida_sunxin/lqx/code/vot2/ext/models/baseline_res_101.pth"
+  HEAD:
+    NAME: "nlhead_builder"
+    NL_INPUT: 512
+    NL_INTER: 256
+    NL_OUTPUT: 512
+
+TEST:
+  AUG: True
+  SCALES: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+  FLIP: False

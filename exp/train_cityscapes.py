@@ -1,24 +1,24 @@
-# Test file for defaultTrainer
 import os
-# import sys
-# sys.path.append(os.environ['OW_ROOT'])
-# from configs.sem_seg_configs.baseline_voc_context import BS_config as config
-# from configs.sem_seg_configs.baseline_config import BS_config as config
-from configs.sem_seg_configs.nonlocal_config import NL_config as config
+os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+import logging
 
-from engine.defaults import DefaultTrainer, default_setup
+import engine.hooks as hooks
+from engine.launch import launch
+from engine.defaults import DefaultTrainer, default_setup, default_argument_setup
+
 from datasets.segmentation.builder import build_segmentation_train_loader
 from datasets.segmentation.builder import build_segmentation_test_loader
 from datasets.metacatalog.catalog import MetadataCatalog
+
 from evaluation.sem_seg_evaluator import SemSegEvaluator
 from evaluation.evaluator import DatasetEvaluators
-# TODO write the SegCheckpoint
-from utils.checkpointers.tracking import TrackingCheckpoint
-import utils.comm as comm
-import logging
-from collections import OrderedDict
 from evaluation.testing import verify_results
-import engine.hooks as hooks
+
+import utils.comm as comm
+from utils.checkpointers.generic import GenericCheckpoint
+
+from collections import OrderedDict
+from configs import get_sem_seg_config
 
 
 class SegTrainer(DefaultTrainer):
@@ -48,7 +48,6 @@ class SegTrainer(DefaultTrainer):
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
 
         evaluator_list = []
-        # TODO MetadataCatalog
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         if evaluator_type in ["sem_seg", "coco_panoptic_seg"]:
             evaluator_list.append(
@@ -82,18 +81,31 @@ class SegTrainer(DefaultTrainer):
             )
             for name in cfg.DATASETS.TEST
         ]
-        res = cls.test_multi_scale(config, model, evaluators)
+        res = cls.test_multi_scale(cfg, model, evaluators)
         res = OrderedDict({k + "_MultiScale": v for k, v in res.items()})
         return res
 
 
-def main(args):
-    default_setup(config, args)
+def setup_config(args):
+    """
+    Args:
+        args: Create configs and perform basic setup
+    Returns: custom configs
+    """
+    cfg = get_config()
+    cfg.merge_from_file(args.config_file)
+    cfg.merge_from_list(args.opts)
+    cfg.freeze()
+    default_setup(cfg, args)
+    return cfg
 
+
+def main(args):
+    config = setup_config(args)
     # Only perform evaluation
     if args.eval_only:
         model = SegTrainer.build_model(config)
-        TrackingCheckpoint(model, save_dir=config.OUTPUT_DIR).resume_or_load(
+        GenericCheckpoint(model, save_dir=config.OUTPUT_DIR).resume_or_load(
             config.MODEL.WEIGHTS, resume=args.resume
         )
         res = SegTrainer.test(config, model)
@@ -116,15 +128,10 @@ def main(args):
 
 
 if __name__ == '__main__':
-    from engine.defaults import default_setup, default_argument_setup
-    from engine.launch import launch
-
-    import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
     args = default_argument_setup().parse_args()
-    args.num_gpus = 4
-    print('Command Line Args: ', args)
+    args.num_gpus = 1
+    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/non_local.yaml"
 
     launch(
         main_func=main, num_gpus_per_machine=args.num_gpus,
