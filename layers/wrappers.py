@@ -100,3 +100,39 @@ else:
             # get output shape
             output_shape = x.shape
             return _NewEmptyTensorOp.apply(x, output_shape)
+
+def nonzero_tuple(x):
+    """
+    A 'as_tuple=True' version of torch.nonzero to support torchscript.
+    because of https://github.com/pytorch/pytorch/issues/38718
+    """
+    if x.dim() == 0:
+        return x.unsqueeze(0).nonzero().unbind(1)
+    return x.nonzero().unbind(1)
+
+
+if TORCH_VERSION > (1, 5):
+    Linear = torch.nn.Linear
+else:
+
+    class Linear(torch.nn.Linear):
+        """
+        A wrapper around :class:`torch.nn.Linear` to support empty inputs and more features.
+        Because of https://github.com/pytorch/pytorch/issues/34202
+        """
+
+        def forward(self, x):
+            if x.numel() == 0:
+                output_shape = [x.shape[0], self.weight.shape[0]]
+
+                empty = _NewEmptyTensorOp.apply(x, output_shape)
+                if self.training:
+                    # This is to make DDP happy.
+                    # DDP expects all workers to have gradient w.r.t the same set of parameters.
+                    _dummy = sum(x.view(-1)[0] for x in self.parameters()) * 0.0
+                    return empty + _dummy
+                else:
+                    return empty
+
+            x = super().forward(x)
+            return x

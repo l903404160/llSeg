@@ -18,3 +18,6 @@ This repo is constructed for reproducing many interesting DL algorithms. Now it 
 
 
 # Detection Models
+
+- [X] Model OK
+- [ ] Training Logic
