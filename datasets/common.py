@@ -5,6 +5,8 @@ import numpy as np
 import torch.utils.data as data
 
 
+__all__ = ["MapDataset", "DatasetFromList", "AspectRatioGroupedDataset"]
+
 class MapDataset(data.Dataset):
     """
     Map a function over the elements in a dataset.
@@ -76,23 +78,39 @@ class DatasetFromList(data.Dataset):
         else:
             return self._lst[idx]
 
-if __name__ == '__main__':
-    from torchvision.transforms.transforms import ToTensor
-    from datasets import DATASET_REGISTRY
-    from datasets.segmentation.seg_mapper import SegDatasetMapper
-    import numpy as np
-    info = {
-        'root': '/root/cityscapes',
-        'flag': 'train'
-    }
 
-    from configs.defaults import _C as cfg
+class AspectRatioGroupedDataset(data.IterableDataset):
+    """
+    Batch data that have similar aspect ratio together.
+    In this implementation, images whose aspect ratio < (or >) 1 will
+    be batched together.
+    This improves training speed because the images then need less padding
+    to form a batch.
+    It assumes the underlying dataset produces dicts with "width" and "height" keys.
+    It will then produce a list of original dicts with length = batch_size,
+    all with similar aspect ratios.
+    """
 
-    cs = DATASET_REGISTRY.get('CityScapes')(cfg, info)
-    mapper = SegDatasetMapper(cfg, is_train=True)
+    def __init__(self, dataset, batch_size):
+        """
+        Args:
+            dataset: an iterable. Each element must be a dict with keys
+                "width" and "height", which will be used to batch data.
+            batch_size (int):
+        """
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self._buckets = [[] for _ in range(2)]
+        # Hard-coded two aspect ratio groups: w > h and w < h.
+        # Can add support for more aspect ratio groups, but doesn't seem useful
 
-    mapD = MapDataset(cs, mapper)
-    print(len(mapD))
-    for d in mapD:
-        print(np.unique(d['anno']))
-        print('hah')
+    def __iter__(self):
+        for d in self.dataset:
+            w, h = d["width"], d["height"]
+            bucket_id = 0 if w > h else 1
+            bucket = self._buckets[bucket_id]
+            bucket.append(d)
+            if len(bucket) == self.batch_size:
+                yield bucket[:]
+                del bucket[:]
+

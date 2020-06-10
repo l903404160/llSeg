@@ -1,0 +1,8 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_RCNN_FPN.yaml"
+
+MODEL:
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  MASK_ON: False
+  RESNETS:
+    DEPTH: 50
+
