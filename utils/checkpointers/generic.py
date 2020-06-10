@@ -1,10 +1,10 @@
-from utils.checkpointers.checkpoint import Checkopointer
+from utils.checkpointers.checkpoint import Checkpointer
 from .functional import align_and_update_state_dicts
 from typing import Any
 import utils.comm as comm
 
 
-class GenericCheckpoint(Checkopointer):
+class GenericCheckpoint(Checkpointer):
     def __init__(self, model, save_dir="", *, save_to_disk=None, **checkpointables):
         # TODO: change the is main process
         is_main_process = comm.is_main_process()

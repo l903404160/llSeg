@@ -4,7 +4,6 @@
 from utils.registry import Registry
 from models import MODEL_BUILDER_REGISTRY
 
-SEGMENTATION_REGISTRY = Registry("SEGMENTATION")
 
 from .base import GeneralSemanticSegmentationModel
 

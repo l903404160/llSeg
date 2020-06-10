@@ -210,24 +210,3 @@ class ProposalNetwork(nn.Module):
             r = detector_postprocess(results_per_image, height, width)
             processed_results.append({"proposals": r})
         return processed_results
-
-if __name__ == '__main__':
-    from configs.configs_files.detection.detection_defaults import _C as cfg
-    cfg.MODEL.BACKBONE.NAME = "resnet_fpn_builder"
-    cfg.MODEL.RESNETS.OUT_FEATURES = ["res2", "res3", "res4", "res5"]
-    cfg.MODEL.FPN.IN_FEATURES = ["res2", "res3", "res4", "res5"]
-    cfg.MODEL.RPN.IN_FEATURES = ["p2", "p3", "p4", "p5", "p6"]
-
-    cfg.MODEL.ROI_HEADS.NAME = "StandardROIHeads"
-    cfg.MODEL.ROI_HEADS.IN_FEATURES = ["p2", "p3", "p4", "p5"]
-
-    cfg.MODEL.ROI_BOX_HEAD.NAME = "FastRCNNConvFCHead"
-    cfg.MODEL.ROI_BOX_HEAD.NUM_FC = 2
-    cfg.MODEL.ROI_BOX_HEAD.POOLER_RESOLUTION = 7
-
-    m = GeneralizedRCNN(cfg)
-
-    import torch
-    x = torch.randn(2,3,960, 960)
-    y = m.backbone(x)
-    print(m)

@@ -5,4 +5,5 @@ MODEL:
   MASK_ON: False
   RESNETS:
     DEPTH: 50
-
+SOLVER:
+  IMS_PER_BATCH: 2
