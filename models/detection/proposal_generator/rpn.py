@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 import torch
 import torch.nn.functional as F
-from utils.nn import smooth_l1_loss
+from utils.nn.smoothL1Loss import smooth_l1_loss
 
 import torch.nn as nn
 
@@ -337,7 +337,7 @@ class RPN(nn.Module):
             "loss_rpn_loc": localization_loss / normalizer,
         }
 
-    def forward(self, iamges: ImageList,
+    def forward(self, images: ImageList,
                 features: Dict[str, torch.Tensor],
                 gt_instances: Optional[Instances] = None):
         """

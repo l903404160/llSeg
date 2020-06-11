@@ -313,6 +313,7 @@ def annotations_to_instances(annos, image_size, mask_format="polygon"):
     """
     boxes = [BoxMode.convert(obj["bbox"], obj["bbox_mode"], BoxMode.XYXY_ABS) for obj in annos]
     target = Instances(image_size)
+
     boxes = target.gt_boxes = Boxes(boxes)
     boxes.clip(image_size)
 

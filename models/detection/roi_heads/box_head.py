@@ -83,10 +83,11 @@ class FastRCNNConvFCHead(nn.Module):
     def forward(self, x):
         for layer in self.conv_norm_relus:
             x = layer(x)
-        if len(self.fcs) > 2:
-            x = torch.flatten(x, start_dim=1)
-            for layer in self.fcs:
-                x = F.relu(layer(x))
+        if len(self.fcs):
+            if x.dim() > 2:
+                x = torch.flatten(x, start_dim=1)
+                for layer in self.fcs:
+                    x = F.relu(layer(x))
         return x
 
     @property

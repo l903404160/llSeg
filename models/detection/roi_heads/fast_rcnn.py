@@ -1,6 +1,6 @@
 import logging
 import torch
-from utils.nn import smooth_l1_loss
+from utils.nn.smoothL1Loss import smooth_l1_loss
 from torch import nn
 from torch.nn import functional as F
 
@@ -311,7 +311,6 @@ class FastRCNNOutputs(object):
         return fast_rcnn_inference(
             boxes, scores, image_shapes, score_thresh, nms_thresh, topk_per_image
         )
-
 
 
 class FastRCNNOutputLayers(nn.Module):

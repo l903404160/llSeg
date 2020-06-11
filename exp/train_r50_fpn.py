@@ -141,6 +141,7 @@ if __name__ == "__main__":
 
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn.yaml"
     args.num_gpus=1
+    args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
 
     print("Command Line Args:", args)
     launch(

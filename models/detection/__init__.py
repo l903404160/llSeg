@@ -1,6 +1,7 @@
 """
     entrance of detection
 """
+import torch
 from models import MODEL_BUILDER_REGISTRY
 from .base import GeneralizedRCNN
 
@@ -12,4 +13,5 @@ def detection_builder(cfg):
     :return:  detection model
     """
     detection_model = GeneralizedRCNN(cfg)
+    detection_model.to(torch.device(cfg.MODEL.DEVICE))
     return detection_model

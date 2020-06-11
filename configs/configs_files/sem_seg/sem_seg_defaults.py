@@ -133,4 +133,4 @@ _C.TEST.SAVE_PREDICTION = False
 # For end-to-end tests to verify the expected accuracy.
 # Each item is [task, metric, value, tolerance]
 # e.g.: [['bbox', 'AP', 38.5, 0.2]]
-_C.TEST_EXPECTED_RESULTS = []
+_C.TEST.EXPECTED_RESULTS = []

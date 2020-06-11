@@ -43,7 +43,7 @@ class Instances:
         if name.startswith("_"):
             super(Instances, self).__setattr__(name, val)
         else:
-            self.set(name. val)
+            self.set(name, val)
 
     def __getattr__(self, name: str) -> Any:
         if name == "_fields" or name not in self._fields:
@@ -61,7 +61,7 @@ class Instances:
             assert (
                 len(self) == data_len
             ), "Adding a field of length {} to a Instances of length {}".format(data_len, len(self))
-            self._fields[name] = value
+        self._fields[name] = value
 
     def has(self, name: str) -> bool:
         """
@@ -173,7 +173,8 @@ class Instances:
 
 
 
-
-
-
-
+if __name__ == '__main__':
+    from structures import Boxes
+    test = Instances(image_size=(200, 300))
+    test.gt_boxes = Boxes(torch.Tensor([[0,0,10,10]]))
+    print(test)

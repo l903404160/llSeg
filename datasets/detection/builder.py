@@ -195,6 +195,7 @@ def print_instances_class_histogram(dataset_dicts, class_names):
         logging.INFO,
         "Distribution of instances among all {} categories:\n".format(num_classes)
         + colored(table, "cyan"),
+        name="OUCWheel."+__name__,
         key="message",
     )
 
