@@ -72,7 +72,7 @@ class FPN(Backbone):
         self.output_convs = output_convs[::-1]
         self.top_block = top_block
         self.in_features = in_features
-        self.bottum_up = bottom_up
+        self.bottom_up = bottom_up
         # Return feature names are "p<stage>", like ["p2", "p3", ..., "p6"]
         self._out_feature_strides = {"p{}".format(int(math.log2(s))): s for s in in_strides}
         # top block output feature maps
@@ -98,8 +98,8 @@ class FPN(Backbone):
         Returns: (dict[str->Tensor])
         """
         # Reverse feature maps into top-down order (from low to high resolution)
-        bottum_up_features = self.bottum_up(x)
-        x = [bottum_up_features[f] for f in self.in_features[::-1]]
+        bottom_up_features = self.bottom_up(x)
+        x = [bottom_up_features[f] for f in self.in_features[::-1]]
 
         results = []
         prev_features = self.lateral_convs[0](x[0])
@@ -113,7 +113,7 @@ class FPN(Backbone):
             results.insert(0, output_conv(prev_features))
 
         if self.top_block is not None:
-            top_block_in_feature = bottum_up_features.get(self.top_block.in_feature, None)
+            top_block_in_feature = bottom_up_features.get(self.top_block.in_feature, None)
             if top_block_in_feature is None:
                 top_block_in_feature = results[self._out_features.index(self.top_block.in_feature)]
             results.extend(self.top_block(top_block_in_feature))

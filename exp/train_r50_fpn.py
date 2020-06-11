@@ -10,11 +10,12 @@ Therefore, we recommend you to use detectron2 as an library and take
 this file as an example of how to use the library.
 You may want to write your own script with your datasets and other customizations.
 """
+import sys
+sys.path.append("/home/haida_sunxin/lqx/code/llseg")
 
 import logging
 import os
 from collections import OrderedDict
-import torch
 
 import  utils.comm as comm
 from utils.checkpointers.detection_checkpoint import DetectionCheckpointer
@@ -137,10 +138,14 @@ def main(args):
 
 if __name__ == "__main__":
 
+    import os
+    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+
     args = default_argument_setup().parse_args()
 
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn.yaml"
-    args.num_gpus=1
+    args.num_gpus = 1
+
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
 
     print("Command Line Args:", args)

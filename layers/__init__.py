@@ -4,3 +4,4 @@ from .wrappers import *
 from .deform_conv import ModulatedDeformConv, DeformConv
 from .nms import *
 from .roi_align import ROIAlign
+from .blocks import CNNBlockBase
