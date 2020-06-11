@@ -102,6 +102,10 @@ def setup(args):
     cfg = get_detection_config()
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
+
+    cfg.DATASETS.TRAIN = ("visdrone_train",)
+    cfg.DATASETS.TEST = ("visdrone_val",)
+
     cfg.freeze()
     default_setup(cfg, args)
     return cfg
@@ -139,12 +143,12 @@ def main(args):
 if __name__ == "__main__":
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
     args = default_argument_setup().parse_args()
 
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn.yaml"
-    args.num_gpus = 1
+    args.num_gpus = 4
 
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
 

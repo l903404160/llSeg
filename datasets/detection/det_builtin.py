@@ -1,8 +1,6 @@
 import os
 
-from datasets.metacatalog.catalog import DatasetCatalog, MetadataCatalog
-
-from .register import register_coco_instances
+from .register import register_coco_instances, register_visdrone_instances
 from .det_builtin_meta import _get_builtin_metadata
 
 _PREDEFINED_SPLITS_COCO = {}
@@ -19,6 +17,25 @@ def register_coco(root):
         for key, (image_root, json_file) in splits_per_dataset.items():
             # Assume pre-defined datasets live in `./datasets`.
             register_coco_instances(
+                key,
+                _get_builtin_metadata(dataset_name),
+                os.path.join(root, json_file) if "://" not in json_file else json_file,
+                os.path.join(root, image_root),
+            )
+
+_PREDEFINED_SPLITS_VISDRONE = {}
+_PREDEFINED_SPLITS_VISDRONE["visdrone"] = {
+    "visdrone_train": ("DronesDET/train/images", "DronesDET/train/annotations/train.json"),
+    "visdrone_val": ("DronesDET/val/images", "DronesDET/val/annotations/val.json"),
+    "visdrone_test": ("DronesDET/test/images", "DronesDET/test/annotations/test.json"),
+}
+
+
+def register_visdrone(root):
+    for dataset_name, splits_per_dataset in _PREDEFINED_SPLITS_VISDRONE.items():
+        for key, (image_root, json_file) in splits_per_dataset.items():
+            # Assume pre-defined datasets live in `./datasets`.
+            register_visdrone_instances(
                 key,
                 _get_builtin_metadata(dataset_name),
                 os.path.join(root, json_file) if "://" not in json_file else json_file,

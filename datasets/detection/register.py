@@ -5,7 +5,8 @@ import os
 
 from datasets.metacatalog.catalog import MetadataCatalog, DatasetCatalog
 
-from .coco import load_coco_json, load_sem_seg
+from .coco import load_coco_json
+from .visdrone import load_visdrone_json
 
 """
 This file contains functions to register a COCO-format dataset to the DatasetCatalog.
@@ -32,6 +33,20 @@ def register_coco_instances(name, metadata, json_file, image_root):
     assert isinstance(image_root, (str, os.PathLike)), image_root
     # 1. register a function which returns dicts
     DatasetCatalog.register(name, lambda: load_coco_json(json_file, image_root, name))
+
+    # 2. Optionally, add metadata about this dataset,
+    # since they might be useful in evaluation, visualization or logging
+    MetadataCatalog.get(name).set(
+        json_file=json_file, image_root=image_root, evaluator_type="coco", **metadata
+    )
+
+
+def register_visdrone_instances(name, metadata, json_file, image_root):
+    assert isinstance(name, str), name
+    assert isinstance(json_file, (str, os.PathLike)), json_file
+    assert isinstance(image_root, (str, os.PathLike)), image_root
+    # 1. register a function which returns dicts
+    DatasetCatalog.register(name, lambda: load_visdrone_json(json_file, image_root, name))
 
     # 2. Optionally, add metadata about this dataset,
     # since they might be useful in evaluation, visualization or logging

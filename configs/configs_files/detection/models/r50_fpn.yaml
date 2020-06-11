@@ -4,8 +4,10 @@ OUTPUT_DIR: "./output"
 MODEL:
   WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
   MASK_ON: False
+  ROI_HEADS:
+    NUM_CLASSES: 10
   RESNETS:
     DEPTH: 50
 SOLVER:
-  IMS_PER_BATCH: 4
+  IMS_PER_BATCH: 16
   MAX_ITER: 90000
