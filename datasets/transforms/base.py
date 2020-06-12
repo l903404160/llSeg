@@ -316,6 +316,12 @@ class TransformList:
         """
         return len(self.transforms)
 
+    def inverse(self) -> "TransformList":
+        """
+        Invert each transform in reversed order.
+        """
+        return TransformList([x.inverse() for x in self.transforms[::-1]])
+
 
 class HFlipTransform(Transform):
     """
@@ -358,6 +364,12 @@ class HFlipTransform(Transform):
         """
         coords[:, 0] = self.width - coords[:, 0]
         return coords
+
+    def inverse(self) -> Transform:
+        """
+        The inverse is to flip again
+        """
+        return self
 
 
 class VFlipTransform(Transform):
@@ -404,6 +416,12 @@ class VFlipTransform(Transform):
         coords[:, 1] = self.height - coords[:, 1]
         return coords
 
+    def inverse(self) -> Transform:
+        """
+        The inverse is to flip again
+        """
+        return self
+
 
 class NoOpTransform(Transform):
     """
@@ -418,6 +436,9 @@ class NoOpTransform(Transform):
 
     def apply_coords(self, coords: np.ndarray) -> np.ndarray:
         return coords
+
+    def inverse(self) -> Transform:
+        return self
 
 
 class ScaleTransform(Transform):
@@ -503,6 +524,12 @@ class ScaleTransform(Transform):
         """
         segmentation = self.apply_image(segmentation, interp="nearest")
         return segmentation
+
+    def inverse(self) -> Transform:
+        """
+        The inverse is to resize it back.
+        """
+        return ScaleTransform(self.new_h, self.new_w, self.h, self.w, self.interp)
 
 
 class GridSampleTransform(Transform):
@@ -688,3 +715,9 @@ class BlendTransform(Transform):
         Apply no transform on the full-image segmentation.
         """
         return segmentation
+
+    def inverse(self) -> Transform:
+        """
+        The inverse is a no-op.
+        """
+        return NoOpTransform()

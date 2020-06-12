@@ -46,7 +46,7 @@ def load_visdrone_json(json_file, image_root, dataset_name=None, extra_annotatio
     if dataset_name is not None:
         meta = MetadataCatalog.get(dataset_name)
         cat_ids = sorted(coco_api.getCatIds())
-        cats = coco_api.loadCats(cat_ids)[1:-1]
+        cats = coco_api.loadCats(cat_ids)
         # The categories in a custom json file may not be sorted.
         thing_classes = [c["name"] for c in sorted(cats, key=lambda x: x["id"])]
         meta.thing_classes = thing_classes
@@ -59,7 +59,6 @@ def load_visdrone_json(json_file, image_root, dataset_name=None, extra_annotatio
         # It works by looking at the "categories" field in the json, therefore
         # if users' own json also have incontiguous ids, we'll
         # apply this mapping as well but print a warning.
-        cat_ids = cat_ids[1:-1]
         if not (min(cat_ids) == 1 and max(cat_ids) == len(cat_ids)):
             if "coco" not in dataset_name:
                 logger.warning(

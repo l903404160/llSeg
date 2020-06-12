@@ -23,11 +23,11 @@ from configs.config import get_detection_config
 from datasets.metacatalog.catalog import MetadataCatalog
 from engine.defaults import DefaultTrainer, default_argument_setup, default_setup, hooks
 from engine.launch import launch
-from evaluation import COCOEvaluator, DatasetEvaluators, verify_results
+from evaluation import DatasetEvaluators, verify_results, VisDroneEvaluator
 from datasets.detection.builder import build_detection_train_loader, build_detection_test_loader
 
 # TODO Test Aug
-from detectron2.modeling import GeneralizedRCNNWithTTA
+from models.detection.test_time_augmentation import GeneralizedRCNNWithTTA
 
 
 class Trainer(DefaultTrainer):
@@ -71,15 +71,15 @@ class Trainer(DefaultTrainer):
         evaluator_list = []
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
 
-        if evaluator_type in ["coco", "coco_panoptic_seg"]:
-            evaluator_list.append(COCOEvaluator(dataset_name, cfg, True, output_folder))
+        if evaluator_type in ["visdrone"]:
+            evaluator_list.append(VisDroneEvaluator(dataset_name, cfg, True, output_folder))
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
         return DatasetEvaluators(evaluator_list)
 
     @classmethod
     def test_with_TTA(cls, cfg, model):
-        logger = logging.getLogger("detectron2.trainer")
+        logger = logging.getLogger("OUCWheel.trainer")
         # In the end of training, run an evaluation with TTA
         # Only support some R-CNN models.
         logger.info("Running inference with test-time augmentation ...")
@@ -102,10 +102,6 @@ def setup(args):
     cfg = get_detection_config()
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
-
-    cfg.DATASETS.TRAIN = ("visdrone_train",)
-    cfg.DATASETS.TEST = ("visdrone_val",)
-
     cfg.freeze()
     default_setup(cfg, args)
     return cfg
@@ -151,6 +147,8 @@ if __name__ == "__main__":
     args.num_gpus = 4
 
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/output/model_0004999.pth"]
+    # args.eval_only = True
 
     print("Command Line Args:", args)
     launch(

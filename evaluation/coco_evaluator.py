@@ -10,7 +10,7 @@ import pickle
 from collections import OrderedDict
 import pycocotools.mask as mask_util
 import torch
-from fvcore.common.file_io import PathManager
+
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 from tabulate import tabulate
@@ -54,7 +54,7 @@ class COCOEvaluator(DatasetEvaluator):
         self._output_dir = output_dir
 
         self._cpu_device = torch.device("cpu")
-        self._logger = logging.getLogger(__name__)
+        self._logger = logging.getLogger("OUCWheel."+__name__)
 
         self._metadata = MetadataCatalog.get(dataset_name)
         if not hasattr(self._metadata, "json_file"):
@@ -67,7 +67,7 @@ class COCOEvaluator(DatasetEvaluator):
             self._metadata.json_file = cache_path
             convert_to_coco_json(dataset_name, cache_path)
 
-        json_file = PathManager.get_local_path(self._metadata.json_file)
+        json_file = os.fspath(self._metadata.json_file)
         with contextlib.redirect_stdout(io.StringIO()):
             self._coco_api = COCO(json_file)
 
@@ -127,9 +127,9 @@ class COCOEvaluator(DatasetEvaluator):
             return {}
 
         if self._output_dir:
-            PathManager.mkdirs(self._output_dir)
+            os.makedirs(self._output_dir, exist_ok=True)
             file_path = os.path.join(self._output_dir, "instances_predictions.pth")
-            with PathManager.open(file_path, "wb") as f:
+            with open(file_path, "wb") as f:
                 torch.save(predictions, f)
 
         self._results = OrderedDict()
@@ -165,7 +165,7 @@ class COCOEvaluator(DatasetEvaluator):
         if self._output_dir:
             file_path = os.path.join(self._output_dir, "coco_instances_results.json")
             self._logger.info("Saving results to {}".format(file_path))
-            with PathManager.open(file_path, "w") as f:
+            with open(file_path, "w") as f:
                 f.write(json.dumps(coco_results))
                 f.flush()
 
@@ -173,7 +173,7 @@ class COCOEvaluator(DatasetEvaluator):
             self._logger.info("Annotations are not available for evaluation.")
             return
 
-        self._logger.info("Evaluating predictions ...")
+        self._logger.info("Evaluating predictions, Tasks: {} ...".format(tasks))
         for task in sorted(tasks):
             coco_eval = (
                 _evaluate_predictions_on_coco(
@@ -209,7 +209,7 @@ class COCOEvaluator(DatasetEvaluator):
                 "ids": ids,
                 "bbox_mode": bbox_mode,
             }
-            with PathManager.open(os.path.join(self._output_dir, "box_proposals.pkl"), "wb") as f:
+            with open(os.path.join(self._output_dir, "box_proposals.pkl"), "wb") as f:
                 pickle.dump(proposal_data, f)
 
         if not self._do_evaluation:
@@ -265,6 +265,10 @@ class COCOEvaluator(DatasetEvaluator):
         # Compute per-category AP
         # from https://github.com/facebookresearch/Detectron/blob/a6a835f5b8208c45d0dce217ce9bbda915f44df7/detectron/datasets/json_dataset_evaluator.py#L222-L252 # noqa
         precisions = coco_eval.eval["precision"]
+        print("-------------------" + __name__)
+        print(precisions.shape)
+        print(class_names)
+        print("-------------------" + __name__)
         # precision has dims (iou, recall, cls, area range, max dets)
         assert len(class_names) == precisions.shape[2]
 

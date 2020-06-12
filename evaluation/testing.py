@@ -48,7 +48,7 @@ def verify_results(cfg, results):
     :param results: task_name -> {metric -< score}
     :return:  bool: whether the verification succeeds or not
     """
-    expected_results = cfg.TEST_EXPECTED_RESULTS
+    expected_results = cfg.TEST.EXPECTED_RESULTS
     if not len(expected_results):
         return True
 

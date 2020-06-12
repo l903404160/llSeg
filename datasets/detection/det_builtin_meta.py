@@ -136,6 +136,7 @@ COCO_CATEGORIES = [
 
 
 VISDRONE_CATEGORIES = [
+    {"color": [0, 0, 0], "isthing": 1, "id": 0, "name": "ignore"},
     {"color": [220, 20, 60], "isthing": 1, "id": 1, "name": "pedestrian"},
     {"color": [119, 11, 32], "isthing": 1, "id": 2, "name": "people"},
     {"color": [0, 0, 142], "isthing": 1, "id": 3, "name": "bicycle"},
@@ -146,7 +147,8 @@ VISDRONE_CATEGORIES = [
     {"color": [0, 0, 70], "isthing": 1, "id": 8, "name": "awning-tricycle"},
     {"color": [0, 0, 192], "isthing": 1, "id": 9, "name": "bus"},
     {"color": [250, 170, 30], "isthing": 1, "id": 10, "name": "motor"},
-]# 'pedestrian', 'people', 'bicycle', 'car', 'van', 'truck', 'tricycle', 'awning-tricycle', 'bus', 'motor'
+    {"color": [100, 200, 150], "isthing": 1, "id": 11, "name": "others"},
+]
 
 
 def _get_coco_instances_meta():
@@ -167,8 +169,7 @@ def _get_coco_instances_meta():
 def _get_visdrone_instance_meta():
     thing_ids = [k["id"] for k in VISDRONE_CATEGORIES if k["isthing"] == 1]
     thing_colors = [k["color"] for k in VISDRONE_CATEGORIES if k["isthing"] == 1]
-    assert len(thing_ids) == 10, len(thing_ids)
-    # Mapping from the incontiguous COCO category id to an id in [0, 79]
+    assert len(thing_ids) == 12, len(thing_ids)
     thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
     thing_classes = [k["name"] for k in VISDRONE_CATEGORIES if k["isthing"] == 1]
     ret = {

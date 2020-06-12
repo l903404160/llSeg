@@ -398,7 +398,6 @@ class FastRCNNOutputLayers(nn.Module):
         proposal_deltas = self.bbox_pred(x)
         return scores, proposal_deltas
 
-
     # TODO: move the implementation to this class.
     def losses(self, predictions, proposals):
         """

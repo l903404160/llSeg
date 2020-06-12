@@ -261,7 +261,7 @@ def inference_on_detection_dataset(model, data_loader, evaluator):
         The return value of `evaluator.evaluate()`
     """
     num_devices = get_world_size()
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("OUCWheel."+__name__)
     logger.info("Start inference on {} images".format(len(data_loader)))
 
     total = len(data_loader)  # inference data loader must have a fixed length
@@ -281,6 +281,7 @@ def inference_on_detection_dataset(model, data_loader, evaluator):
 
             start_compute_time = time.perf_counter()
             outputs = model(inputs)
+
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time
