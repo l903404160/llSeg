@@ -100,6 +100,7 @@ def setup(args):
     Create configs and perform basic setups.
     """
     cfg = get_detection_config()
+    print(args.config_file)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
@@ -143,11 +144,17 @@ if __name__ == "__main__":
 
     args = default_argument_setup().parse_args()
 
-    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn.yaml"
+    # Config files
+    # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn_cascade.yaml"
+    # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/X101-64x4d-dcnv2-fpn.yaml"
+    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn_retina.yaml"
+
     args.num_gpus = 4
 
+    # Weights
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
-    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/output/model_0004999.pth"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/Cascade_small_sync_x101/model_0004999.pth"]
     # args.eval_only = True
 
     print("Command Line Args:", args)

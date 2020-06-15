@@ -94,7 +94,9 @@ class TrainerBase:
                     self.after_step()
             except Exception:
                 logger.exception(" Exception during training: ")
-                raise
+                # ensure the training phase
+                pass
+                # raise
 
             finally:
                 self.after_train()

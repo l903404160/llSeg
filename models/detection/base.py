@@ -5,10 +5,8 @@ import logging
 import torch
 import torch.nn as nn
 
-from utils.events import get_event_storage
 from utils.logger import log_first_n
 from structures import ImageList
-from datasets.dataset_utils import convert_image_to_rgb
 
 from models.detection.backbone import backbone_builder
 from models.detection.proposal_generator import proposal_generator_builder

@@ -33,6 +33,12 @@ class DetectionCheckpointer(Checkpointer):
                 if "blobs" in data:
                     # Detection models have "blobs", but ImageNet models don't
                     data = data["blobs"]
+                    try:
+                        # Load X101-64x4d.pkl problem
+                        data.pop('weight_order')
+                        data.pop('lr')
+                    except:
+                        pass
                 data = {k: v for k, v in data.items() if not k.endswith("_momentum")}
                 return {"model": data, "__author__": "Caffe2", "matching_heuristics": True}
 

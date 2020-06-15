@@ -26,7 +26,7 @@ _C.MODEL.LOAD_PROPOSALS = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.KEYPOINT_ON = False
 _C.MODEL.DEVICE = "cuda"
-_C.MODEL.BUILDER = "detection_builder"
+_C.MODEL.BUILDER = "base_rcnn_builder"
 _C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
 
 # Path (a file path, or URL like detectron2://.., https://..) to a checkpoint file
@@ -274,6 +274,12 @@ _C.MODEL.ROI_HEADS.NMS_THRESH_TEST = 0.5
 # train ROI heads.
 _C.MODEL.ROI_HEADS.PROPOSAL_APPEND_GT = True
 
+# Add Soft - Nms
+_C.MODEL.ROI_HEADS.SOFT_NMS_ENABLED = False
+_C.MODEL.ROI_HEADS.SOFT_NMS_METHOD = "linear"
+_C.MODEL.ROI_HEADS.SOFT_NMS_SIGMA = 0.5
+_C.MODEL.ROI_HEADS.SOFT_NMS_PRUNE = 0.001
+
 # ---------------------------------------------------------------------------- #
 # Box Head
 # ---------------------------------------------------------------------------- #
@@ -432,6 +438,12 @@ _C.MODEL.RETINANET.PRIOR_PROB = 0.01
 _C.MODEL.RETINANET.SCORE_THRESH_TEST = 0.05
 _C.MODEL.RETINANET.TOPK_CANDIDATES_TEST = 1000
 _C.MODEL.RETINANET.NMS_THRESH_TEST = 0.5
+
+# Soft - Nms
+_C.MODEL.RETINANET.SOFT_NMS_ENABLE = False
+_C.MODEL.RETINANET.SOFT_NMS_METHOD = "linear"
+_C.MODEL.RETINANET.SOFT_NMS_SIGMA = 0.5
+_C.MODEL.RETINANET.SOFT_NMS_PRUNE = 0.001
 
 # Weights on (dx, dy, dw, dh) for normalizing Retinanet anchor regression targets
 _C.MODEL.RETINANET.BBOX_REG_WEIGHTS = (1.0, 1.0, 1.0, 1.0)

@@ -3,10 +3,10 @@ import torch
 from torch import nn
 from torch.autograd.function import Function
 
-from detectron2.config import configurable
-from detectron2.layers import ShapeSpec
-from detectron2.structures import Boxes, Instances, pairwise_iou
-from detectron2.utils.events import get_event_storage
+from configs.config import configurable
+from layers import ShapeSpec
+from structures import Boxes, Instances, pairwise_iou
+from utils.events import get_event_storage
 
 from models.detection.modules.box_regression import Box2BoxTransform
 from models.detection.modules.matcher import Matcher
@@ -15,6 +15,7 @@ from models.detection.modules.poolers import ROIPooler
 from .box_head import build_box_head
 from .fast_rcnn import FastRCNNOutputLayers, fast_rcnn_inference
 from .roi_heads import ROI_HEADS_REGISTRY, StandardROIHeads
+
 
 class _ScaleGradient(Function):
     @staticmethod
@@ -26,6 +27,8 @@ class _ScaleGradient(Function):
     def backward(ctx, grad_output):
         return grad_output * ctx.scale, None
 
+
+@ROI_HEADS_REGISTRY.register()
 class CascadeROIHeads(StandardROIHeads):
     """
     Implement :paper:`Cascade R-CNN`.
@@ -89,6 +92,10 @@ class CascadeROIHeads(StandardROIHeads):
         pooler_type              = cfg.MODEL.ROI_BOX_HEAD.POOLER_TYPE
         cascade_bbox_reg_weights = cfg.MODEL.ROI_BOX_CASCADE_HEAD.BBOX_REG_WEIGHTS
         cascade_ious             = cfg.MODEL.ROI_BOX_CASCADE_HEAD.IOUS
+        soft_nms_enabled         = cfg.MODEL.ROI_HEADS.SOFT_NMS_ENABLED
+        soft_nms_method          = cfg.MODEL.ROI_HEADS.SOFT_NMS_METHOD
+        soft_nms_sigma           = cfg.MODEL.ROI_HEADS.SOFT_NMS_SIGMA
+
         assert len(cascade_bbox_reg_weights) == len(cascade_ious)
         assert cfg.MODEL.ROI_BOX_HEAD.CLS_AGNOSTIC_BBOX_REG,  \
             "CascadeROIHeads only support class-agnostic regression now!"
@@ -118,6 +125,9 @@ class CascadeROIHeads(StandardROIHeads):
                 FastRCNNOutputLayers(
                     cfg,
                     box_head.output_shape,
+                    soft_nms_enabled=soft_nms_enabled,
+                    soft_nms_method=soft_nms_method,
+                    soft_nms_sigma=soft_nms_sigma,
                     box2box_transform=Box2BoxTransform(weights=bbox_reg_weights),
                 )
             )
@@ -197,6 +207,10 @@ class CascadeROIHeads(StandardROIHeads):
                 image_sizes,
                 predictor.test_score_thresh,
                 predictor.test_nms_thresh,
+                predictor.soft_nms_enabled,
+                predictor.soft_nms_method,
+                predictor.soft_nms_sigma,
+                predictor.soft_nms_prune,
                 predictor.test_topk_per_image,
             )
             return pred_instances

@@ -288,7 +288,7 @@ def align_and_update_state_dicts_with_c2(model_state_dict, ckpt_state_dict, c2_c
     max_len_model = max(len(key) for key in model_keys) if model_keys else 1
     max_len_ckpt = max(len(key) for key in ckpt_keys) if ckpt_keys else 1
     log_str_template = "{: <{}} loaded from {: <{}} of shape {}"
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("OUCWheel."+__name__)
     # matched_pairs (matched checkpoint key --> matched model key)
     matched_keys = {}
     for idx_model, idx_ckpt in enumerate(idxs.tolist()):
@@ -413,7 +413,7 @@ def convert_c2_detectron_names(weights):
         dict: detectron2 names -> tensor
         dict: detectron2 names -> C2 names
     """
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("OUCWheel."+__name__)
     logger.info("Remapping C2 weights ......")
     original_keys = sorted(weights.keys())
     layer_keys = copy.deepcopy(original_keys)

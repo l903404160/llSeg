@@ -5,3 +5,5 @@ from .deform_conv import ModulatedDeformConv, DeformConv
 from .nms import *
 from .roi_align import ROIAlign
 from .blocks import CNNBlockBase
+from .soft_nms_layer import *
+from .effnet_layers.ops import *

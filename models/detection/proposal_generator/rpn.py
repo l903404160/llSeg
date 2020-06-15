@@ -207,7 +207,6 @@ class RPN(nn.Module):
             cfg.MODEL.RPN.IOU_THRESHOLDS, cfg.MODEL.RPN.IOU_LABELS, allow_low_quality_matches=True
         )
 
-        # TODO Build RPN Head
         ret["head"] = build_rpn_head(cfg, [input_shape[f] for f in in_features])
         return ret
 

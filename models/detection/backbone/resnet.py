@@ -264,7 +264,6 @@ class BasicStem(CNNBlockBase):
         return x
 
 
-
 class ResNet(Backbone):
     def __init__(self, stem, stages, num_classes=None, out_features=None):
         """

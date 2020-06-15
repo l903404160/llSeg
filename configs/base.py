@@ -23,7 +23,9 @@ class CfgNode(_CfgNode):
                         filename
                     )
                 )
-                cfg = yaml.unsafe_load(file)
+                file.close()
+                with open(filename, "r") as file:
+                    cfg = yaml.unsafe_load(file)
 
         def merge_a_into_b(a: Dict[Any, Any], b: Dict[Any, Any]) -> None:
             # merge dict a into dict b. values in a will overwrite b.
