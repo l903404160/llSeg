@@ -1,6 +1,3 @@
-# --------------------------------- COCO Register
-
-import copy
 import os
 
 from datasets.metacatalog.catalog import MetadataCatalog, DatasetCatalog

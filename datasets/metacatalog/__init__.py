@@ -1,14 +1,17 @@
-from .bulitin import register_all_cityscapes, register_all_voc_context, register_all_suim
+import os
+from .catalog import DatasetCatalog, MetadataCatalog
+
+from datasets.segmentation.seg_builtin import register_cityscapes, register_voc_context
 from datasets.detection.det_builtin import register_coco, register_visdrone
 
-# TODO check this root
-from configs.defaults import _C as cfg
-
-register_all_cityscapes(root=cfg.DATASETS.ROOT)
-register_all_voc_context(root=cfg.DATASETS.ROOT)
-# register_all_suim(root=cfg.DATASETS.ROOT)
+# Change the implementation like Detectron2. Use the env variable `OW_DATASETS` to indicate the root folder.
+_root = os.getenv("OW_DATASETS", "datasets")
 
 # Detection
-register_coco(root=cfg.DATASETS.ROOT)
-register_visdrone(root=cfg.DATASETS.ROOT)
+register_coco(root=_root)
+register_visdrone(root=_root)
+
+# Segmentation
+register_cityscapes(root=_root)
+register_voc_context(root=_root)
 

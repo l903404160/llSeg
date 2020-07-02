@@ -34,6 +34,7 @@ def _create_gradient_clipper(cfg: CfgNode) -> _GradientClipper:
     }
     return _GRADIENT_CLIP_TYPE_TO_CLIPPER[GradientClipType(cfg.CLIP_TYPE)]
 
+
 def _generate_optimizer_class_with_gradient_clipping(
         optimizer_type: Type[torch.optim.Optimizer], gradient_clipper: _GradientClipper
 ) -> Type[torch.optim.Optimizer]:

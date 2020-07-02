@@ -5,6 +5,7 @@ import glob
 import os
 import time
 
+
 def bbox_iou(a, b, x1y1x2y2=True, overlap=False):
     """
     Calculate IoU and overlap between bbox group a and bbox group b.
@@ -249,13 +250,14 @@ def evaluate_results(pred_dir, target_dir, thresholds=torch.arange(0.5, 1.0, 0.0
     return res
 
 
-def convert_json_to_txt(json_file, output_dir='./result'):
+def convert_json_to_txt(json_file, gt_json, output_dir='./result'):
 
     # make directory
     os.makedirs(output_dir, exist_ok=True)
 
     from pycocotools.coco import COCO
-    coco_gt = COCO('/home/haida_sunxin/lqx/data/DronesDET/val/annotations/val.json')
+
+    coco_gt = COCO(gt_json)
     coco_dt = coco_gt.loadRes(json_file)
 
     imgs = coco_dt.imgs

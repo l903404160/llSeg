@@ -7,7 +7,6 @@ import numpy as np
 import operator
 import pickle
 import torch.utils.data
-from fvcore.common.file_io import PathManager
 from tabulate import tabulate
 from termcolor import colored
 
@@ -115,7 +114,7 @@ def load_proposals_into_dataset(dataset_dicts, proposal_file):
     logger = logging.getLogger(__name__)
     logger.info("Loading proposals from: {}".format(proposal_file))
 
-    with PathManager.open(proposal_file, "rb") as f:
+    with open(proposal_file, "rb") as f:
         proposals = pickle.load(f, encoding="latin1")
 
     # Rename the key names in D1 proposal files
@@ -328,7 +327,6 @@ def build_detection_train_loader(cfg, mapper=None):
     sampler_name = cfg.DATALOADER.SAMPLER_TRAIN
     logger = logging.getLogger(__name__)
     logger.info("Using training sampler {}".format(sampler_name))
-    # TODO avoid if-else?
     if sampler_name == "TrainingSampler":
         sampler = TrainingSampler(len(dataset))
     elif sampler_name == "RepeatFactorTrainingSampler":

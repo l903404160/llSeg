@@ -10,6 +10,8 @@ Therefore, we recommend you to use detectron2 as an library and take
 this file as an example of how to use the library.
 You may want to write your own script with your datasets and other customizations.
 """
+# TODO 重写训练程序文件，目前从Detectron2中抄过来的训练程序，思考是否有地方可以进行优化
+
 import sys
 sys.path.append("/home/haida_sunxin/lqx/code/llseg")
 
@@ -140,22 +142,27 @@ def main(args):
 if __name__ == "__main__":
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3,4,5,6,7'
 
     args = default_argument_setup().parse_args()
 
-    # Config files
+    # Config files  x101_fpn_cascade.yaml
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn_cascade.yaml"
+    # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/x101_fpn_cascade.yaml"
+    args.config_file = "/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101/config.yaml"
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/X101-64x4d-dcnv2-fpn.yaml"
-    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn_retina.yaml"
+    # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/r50_fpn_retina.yaml"
+    # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/eff_b6_bifpn.yaml"
 
-    args.num_gpus = 4
+    args.num_gpus = 8
 
     # Weights
-    args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
-    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
-    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/Cascade_small_sync_x101/model_0004999.pth"]
-    # args.eval_only = True
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
+    args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
+    args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101/model_0004999.pth"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/Cascade_efficient/model_final.pth"]
+    args.eval_only = True
+    args.resume = True
 
     print("Command Line Args:", args)
     launch(

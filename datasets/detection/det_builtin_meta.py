@@ -1,3 +1,4 @@
+# COCO Dataset Meta Information
 COCO_CATEGORIES = [
     {"color": [220, 20, 60], "isthing": 1, "id": 1, "name": "person"},
     {"color": [119, 11, 32], "isthing": 1, "id": 2, "name": "bicycle"},
@@ -134,7 +135,7 @@ COCO_CATEGORIES = [
     {"color": [250, 141, 255], "isthing": 0, "id": 200, "name": "rug-merged"},
 ]
 
-
+# VisDrone Dataset Meta Information
 VISDRONE_CATEGORIES = [
     {"color": [0, 0, 0], "isthing": 1, "id": 0, "name": "ignore"},
     {"color": [220, 20, 60], "isthing": 1, "id": 1, "name": "pedestrian"},
@@ -148,6 +149,11 @@ VISDRONE_CATEGORIES = [
     {"color": [0, 0, 192], "isthing": 1, "id": 9, "name": "bus"},
     {"color": [250, 170, 30], "isthing": 1, "id": 10, "name": "motor"},
     {"color": [100, 200, 150], "isthing": 1, "id": 11, "name": "others"},
+]
+
+# VisDrone Cluster Meta Information
+VISDRONE_WITHCLUSTER_CATEGORIES = [
+    {"color": [120, 90, 60], "isthing": 1, "id": 0, "name": "foreground"},
 ]
 
 
@@ -166,7 +172,7 @@ def _get_coco_instances_meta():
     return ret
 
 
-def _get_visdrone_instance_meta():
+def _get_visdrone_instances_meta():
     thing_ids = [k["id"] for k in VISDRONE_CATEGORIES if k["isthing"] == 1]
     thing_colors = [k["color"] for k in VISDRONE_CATEGORIES if k["isthing"] == 1]
     assert len(thing_ids) == 12, len(thing_ids)
@@ -180,10 +186,25 @@ def _get_visdrone_instance_meta():
     return ret
 
 
+def _get_visdrone_with_cluster_instances_meta():
+    thing_ids = [k["id"] for k in VISDRONE_WITHCLUSTER_CATEGORIES if k["isthing"] == 1]
+    thing_colors = [k["color"] for k in VISDRONE_WITHCLUSTER_CATEGORIES if k["isthing"] == 1]
+    assert len(thing_ids) == 1, len(thing_ids)
+    thing_dataset_id_to_contiguous_id = {k: i for i, k in enumerate(thing_ids)}
+    thing_classes = [k["name"] for k in VISDRONE_WITHCLUSTER_CATEGORIES if k["isthing"] == 1]
+    ret = {
+        "thing_dataset_id_to_contiguous_id": thing_dataset_id_to_contiguous_id,
+        "thing_classes": thing_classes,
+        "thing_colors": thing_colors,
+    }
+    return ret
+
 def _get_builtin_metadata(dataset_name):
     if dataset_name == "coco":
         return _get_coco_instances_meta()
     if dataset_name == "visdrone":
-        return _get_visdrone_instance_meta()
+        return _get_visdrone_instances_meta()
+    if dataset_name == 'visdrone_wcluster':
+        return _get_visdrone_with_cluster_instances_meta()
 
     raise KeyError("No built-in metadata for dataset {}".format(dataset_name))

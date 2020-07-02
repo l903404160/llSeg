@@ -1,12 +1,10 @@
 import os
 from utils.timer import Timer
 import contextlib
-import datetime
 import io
-import json
 import logging
 from datasets.metacatalog.catalog import MetadataCatalog
-from structures import Boxes, BoxMode, PolygonMasks
+from structures import BoxMode
 
 logger = logging.getLogger("OUCWheel." + __name__)
 
@@ -177,6 +175,8 @@ Category ids in annotations are not in [1, #categories]! We'll apply a mapping f
             "A valid polygon should be a list[float] with even length >= 6."
         )
     return dataset_dicts
+
+# TODO Need revist --------------
 
 if __name__ == '__main__':
     json_file = "/home/haida_sunxin/lqx/data/DronesDET/train/annotations/train.json"

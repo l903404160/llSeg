@@ -56,7 +56,7 @@ class RetinaNet(nn.Module):
         self.score_threshold = cfg.MODEL.RETINANET.SCORE_THRESH_TEST
         self.topk_candidates = cfg.MODEL.RETINANET.TOPK_CANDIDATES_TEST
         self.nms_threshold = cfg.MODEL.RETINANET.NMS_THRESH_TEST
-        self.max_detections_pre_image = cfg.TEST.DETECTIONS_PER_IMAGE
+        self.max_detections_per_image = cfg.TEST.DETECTIONS_PER_IMAGE
 
         # No Vis parameters for fast training
 
@@ -127,9 +127,9 @@ class RetinaNet(nn.Module):
 
             return losses
         else:
-            results = self.inference(anchors, pred_logits, pred_anchor_deltas, images.image_size)
+            results = self.inference(anchors, pred_logits, pred_anchor_deltas, images.image_sizes)
             processed_results = []
-            for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_size):
+            for results_per_image, input_per_image, image_size in zip(results, batched_inputs, images.image_sizes):
                 height = input_per_image.get("height", image_size[0])
                 width = input_per_image.get("width", image_size[1])
                 r = detector_postprocess(results_per_image, height, width)
@@ -218,20 +218,20 @@ class RetinaNet(nn.Module):
 
         return gt_labels, matched_gt_boxes
 
-    def inference(self, anchors, pred_logits, pred_anchor_deltas, image_size):
+    def inference(self, anchors, pred_logits, pred_anchor_deltas, image_sizes):
         """
 
         Args:
             anchors:
             pred_logits:
             pred_anchor_deltas:
-            image_size:
+            image_sizes:
 
         Returns:
 
         """
         results = []
-        for img_idx, image_size in enumerate(image_size):
+        for img_idx, image_size in enumerate(image_sizes):
             pred_logits_per_image = [x[img_idx] for x in pred_logits]
             deltas_per_image = [x[img_idx] for x in pred_anchor_deltas]
             results_per_image = self.inference_single_image(anchors, pred_logits_per_image, deltas_per_image, tuple(image_size))
@@ -239,7 +239,7 @@ class RetinaNet(nn.Module):
 
         return results
 
-    def inference_single_image(self, anchors, box_cls, box_delta, image_size):
+    def inference_single_image(self, anchors, box_cls, box_delta, image_sizes):
         """
         Single-image inference
         Args:
@@ -291,7 +291,7 @@ class RetinaNet(nn.Module):
         keep = batched_nms(boxes_all, scores_all, class_idxs_all, self.nms_threshold)
         keep = keep[: self.max_detections_per_image]
 
-        result = Instances(image_size)
+        result = Instances(image_sizes)
         result.pred_boxes = Boxes(boxes_all[keep])
         result.scores = scores_all[keep]
         result.pred_classes = class_idxs_all[keep]

@@ -8,6 +8,7 @@ import random
 
 __all__ = ["MapDataset", "DatasetFromList", "AspectRatioGroupedDataset"]
 
+
 class MapDataset(data.Dataset):
     """
     Map a function over the elements in a dataset.

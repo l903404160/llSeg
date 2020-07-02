@@ -191,9 +191,6 @@ def load_pretrained_weights(model, model_name, load_fc=True, advprop=False):
 
      ret = model.load_state_dict(model_dict, strict=False)
 
-     print('Loaded pretrained weights for {}'.format(model_name))
-
-
 def efficientnet_params(model_name):
     """ Map EfficientNet model name to parameter coefficients. """
     params_dict = {
@@ -300,7 +297,6 @@ class EfficientNet(nn.Module):
     @classmethod
     def from_pretrained(cls, model_name, load_weights=True, advprop=True, num_classes=1000, in_channels=3):
         model = cls.from_name(model_name, override_params={'num_classes': num_classes})
-        print(model)
         if load_weights:
             load_pretrained_weights(model, model_name, load_fc=(num_classes == 1000), advprop=advprop)
         return model
@@ -349,14 +345,13 @@ class EfficientNetBackbone(Backbone):
                 name = 'eff' + str(int(math.log2(current_stride)))
                 self._out_feature_strides[name] = current_stride
                 self._out_feature_channels[name] = self.model._blocks[i-1]._out_channels
-                self._out_feature_idxs[i] = name
+                self._out_feature_idxs[i-1] = name
                 current_stride *= 2
             if i+1 == len(self.model._blocks):
                 name = 'eff' + str(int(math.log2(current_stride)))
                 self._out_feature_strides[name] = current_stride
                 self._out_feature_channels[name] = self.model._blocks[i]._out_channels
                 self._out_feature_idxs[i] = name
-        print(self._out_feature_channels)
 
     def forward(self, x):
         outputs = {}
@@ -374,17 +369,41 @@ class EfficientNetBackbone(Backbone):
                 outputs[self._out_feature_idxs[idx]] = x
         return outputs
 
+def build_efficientnet(cfg, input_shape):
+    # TODO move it to config
+    efficient_bx = 'efficientnet-b6'
+    model = EfficientNet.from_pretrained(efficient_bx, load_weights=True, advprop=False)
+    eff = EfficientNetBackbone(model)
+    return eff
 
 if __name__ == '__main__':
-    model = EfficientNet.from_pretrained('efficientnet-b7', False, advprop=False)
-    print(model._conv_stem._out_channels)
-    print(len(model._blocks))
-    print(model._blocks[-1]._depthwise_conv.stride)
+    from engine.defaults import DefaultTrainer, default_argument_setup, default_setup
+    from exp.train_r50_fpn import setup
+    args = default_argument_setup().parse_args()
+    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/eff_b6_bifpn.yaml"
+    args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
+    cfg = setup(args)
 
-    eff = EfficientNetBackbone(model)
-    x = torch.randn(2, 3, 512,512)
 
-    y = eff(x)
-    print(y['eff5'].size())
-    print(eff.output_shape())
+    # model = EfficientNet.from_pretrained('efficientnet-b7', False, advprop=False)
+    from models.detection.backbone.fpn import efficientnet_fpn_builder
+    m = efficientnet_fpn_builder(cfg)
+    # eff = EfficientNetBackbone(model)
+    # m = EfficientBiFPN(eff, in_features=['eff3', 'eff4', 'eff5'], out_channels=384)
+    print(m.output_shape())
+
+    x = torch.randn(2, 3, 1024, 1024)
+    y = m(x)
+
+    print(y.keys())
+    # print(model._conv_stem._out_channels)
+    # print(len(model._blocks))
+    # print(model._blocks[-1]._depthwise_conv.stride)
+    #
+    # eff = EfficientNetBackbone(model)
+    # x = torch.randn(2, 3, 512,512)
+    #
+    # y = eff(x)
+    # print(y['eff5'].size())
+    # print(eff.output_shape())
 

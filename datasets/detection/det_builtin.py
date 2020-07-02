@@ -23,11 +23,20 @@ def register_coco(root):
                 os.path.join(root, image_root),
             )
 
+
 _PREDEFINED_SPLITS_VISDRONE = {}
 _PREDEFINED_SPLITS_VISDRONE["visdrone"] = {
     "visdrone_train": ("DronesDET/train/images", "DronesDET/train/annotations/train.json"),
     "visdrone_val": ("DronesDET/val/images", "DronesDET/val/annotations/val.json"),
     "visdrone_test": ("DronesDET/test/images", "DronesDET/test/annotations/test.json"),
+    "visdrone_patch_train": ("DronesDET/train/patch_train/images", "DronesDET/patch_train.json"),
+    "visdrone_patch_val": ("DronesDET/val/patch_val/images", "DronesDET/patch_val.json"),
+}
+
+_PREDEFINED_SPLITS_VISDRONE["visdrone_wcluster"] = {
+    "visdrone_cluster_train": ("DronesDET/train/images", "DronesDET/Clusters/visdrone_cluster_train.json"),
+    "visdrone_cluster_val": ("DronesDET/val/images", "DronesDET/Clusters/visdrone_cluster_val.json"),
+    "visdrone_cluster_test": ("DronesDET/test/images", "DronesDET/Clusters/visdrone_cluster_test.json"),
 }
 
 

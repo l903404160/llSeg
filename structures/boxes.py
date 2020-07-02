@@ -123,13 +123,14 @@ class BoxMode(IntEnum):
         else:
             return arr
 
+
 class Boxes:
     """
         This structure stores a list of boxes as a Nx4 torch.Tensor.
-    It supports some common methods about boxes
-    (`area`, `clip`, `nonempty`, etc),
-    and also behaves like a Tensor
-    (support indexing, `to(device)`, `.device`, and iteration over all boxes)
+        It supports some common methods about boxes
+        (`area`, `clip`, `nonempty`, etc),
+        and also behaves like a Tensor
+        (support indexing, `to(device)`, `.device`, and iteration over all boxes)
     Attributes:
         tensor (torch.Tensor): float matrix of Nx4. Each row is (x1, y1, x2, y2).
     """
@@ -334,6 +335,7 @@ def pairwise_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
         torch.zeros(1, dtype=inter.dtype, device=inter.device)
     )
     return iou
+
 
 def matched_boxlist_iou(boxes1: Boxes, boxes2: Boxes) -> torch.Tensor:
     """

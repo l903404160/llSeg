@@ -293,6 +293,10 @@ class CascadeROIHeads(StandardROIHeads):
         boxes = [Boxes(b.detach()) for b in boxes]
         proposals = []
         for boxes_per_image, image_size in zip(boxes, image_sizes):
+            # check if the box is inf
+            # TODO Check box
+            valid_mask = torch.isfinite(boxes_per_image.tensor).sum(dim=1) == 4
+            boxes_per_image = boxes_per_image[valid_mask]
             boxes_per_image.clip(image_size)
             if self.training:
                 # do not filter empty boxes at inference time,

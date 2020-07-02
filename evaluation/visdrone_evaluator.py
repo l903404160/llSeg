@@ -14,6 +14,7 @@ from datasets.metacatalog.catalog import MetadataCatalog
 from utils.logger import create_small_table
 
 
+# TODO 需要重写相关程序，目前的程序是直接改的COCOevaluator，需要重新对该数据集的evaluation过程进行重写。
 class VisDroneEvaluator(DatasetEvaluator):
     """
     Evaluate VisDrone object detection
@@ -111,8 +112,9 @@ class VisDroneEvaluator(DatasetEvaluator):
         # evaluation logic
         txt_output_dir = os.path.join(self._output_dir, 'result')
 
-        convert_json_to_txt(json_file=file_path, output_dir=txt_output_dir)
+        convert_json_to_txt(json_file=file_path, gt_json=self._metadata.get("json_file"), output_dir=txt_output_dir)
         target_dir = '/home/haida_sunxin/lqx/data/DronesDET/val/annotations'
+        # target_dir = '/home/haida_sunxin/lqx/data/DronesDET/val/patch_val/annotations'
         ap_results = evaluate_results(pred_dir=txt_output_dir, target_dir=target_dir)
         self._logger.info(
             "Evaluation results for {}: \n".format("bbox") + create_small_table(ap_results)

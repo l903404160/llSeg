@@ -1,13 +1,20 @@
 __BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_RCNN_FPN.yaml"
 
-OUTPUT_DIR: "./Cascade_patch"
+OUTPUT_DIR: "./Cascade_efficient"
+INPUT:
+  MIN_SIZE_TRAIN: (1024,)
+  MAX_SIZE_TRAIN: 1536
 MODEL:
+  BACKBONE:
+    NAME: "efficientnet_fpn_builder"
   WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
   FPN:
     NORM: "SyncBN"
+    IN_FEATURES: ["eff3", "eff4", "eff5"]
   ROI_HEADS:
     NAME: "CascadeROIHeads"
     NUM_CLASSES: 12
+    IN_FEATURES: ["p3", "p4", "p5", "p6", "p7"]
     SOFT_NMS_ENABLED: False
     SOFT_NMS_METHOD: "linear"
     SOFT_NMS_SIGMA: 0.5
@@ -19,22 +26,16 @@ MODEL:
     NORM: "SyncBN"
   RPN:
     POST_NMS_TOPK_TRAIN: 2000
-  RESNETS:
-    NORM: "SyncBN"
-#    STRIDE_IN_1X1: True  # this is a C2 model
-#    NUM_GROUPS: 1
-#    WIDTH_PER_GROUP: 8
-    DEPTH: 50
-    DEFORM_ON_PER_STAGE: (False, False, False, False)
-    DEFORM_MODULATED: False
-    DEFORM_NUM_GROUPS: 1
+    IN_FEATURES: ["p3", "p4", "p5", "p6", "p7"]
+    PRE_NMS_TOPK_TRAIN: 2000  # Per FPN level
+    PRE_NMS_TOPK_TEST: 1000  # Per FPN level
 SOLVER:
-  IMS_PER_BATCH: 4
+  IMS_PER_BATCH: 2
   MAX_ITER: 1000
   STEPS: (15000, 18000)
 DATASETS:
-  TRAIN: ("visdrone_patch_train",)
-  TEST: ("visdrone_patch_val",)
+  TRAIN: ("visdrone_train",)
+  TEST: ("visdrone_val",)
 
 TEST:
   DETECTIONS_PER_IMAGE: 500

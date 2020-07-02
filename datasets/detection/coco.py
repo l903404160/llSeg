@@ -9,7 +9,6 @@ import pycocotools.mask as mask_util
 from utils.timer import Timer
 # TODO File lock
 from utils.file_io import file_lock
-from PIL import Image
 
 from structures import Boxes, BoxMode, PolygonMasks
 
@@ -422,35 +421,3 @@ def convert_to_coco_json(dataset_name, output_file, allow_cached=True):
             logger.info(f"Caching COCO format annotations at '{output_file}' ...")
             with open(output_file, "w") as f:
                 json.dump(coco_dict, f)
-
-
-if __name__ == "__main__":
-    """
-    Test the COCO json dataset loader.
-    Usage:
-        python -m detectron2.data.datasets.coco \
-            path/to/json path/to/image_root dataset_name
-        "dataset_name" can be "coco_2014_minival_100", or other
-        pre-registered ones
-    """
-    from detectron2.utils.logger import setup_logger
-    from detectron2.utils.visualizer import Visualizer
-    import detectron2.data.datasets  # noqa # add pre-defined metadata
-    import sys
-
-    logger = setup_logger(name=__name__)
-    assert sys.argv[3] in DatasetCatalog.list()
-    meta = MetadataCatalog.get(sys.argv[3])
-
-    dicts = load_coco_json(sys.argv[1], sys.argv[2], sys.argv[3])
-    logger.info("Done loading {} samples.".format(len(dicts)))
-
-    dirname = "coco-data-vis"
-    os.makedirs(dirname, exist_ok=True)
-    for d in dicts:
-        img = np.array(Image.open(d["file_name"]))
-        visualizer = Visualizer(img, metadata=meta)
-        vis = visualizer.draw_dataset_dict(d)
-        fpath = os.path.join(dirname, os.path.basename(d["file_name"]))
-        vis.save(fpath)
-
