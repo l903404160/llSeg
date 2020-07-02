@@ -1,0 +1,46 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_RCNN_FPN.yaml"
+
+OUTPUT_DIR: "./Cascade_efficient"
+INPUT:
+  MIN_SIZE_TRAIN: (1024,)
+  MAX_SIZE_TRAIN: 1536
+MODEL:
+  BACKBONE:
+    NAME: "efficientnet_fpn_builder"
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  FPN:
+    NORM: "SyncBN"
+    IN_FEATURES: ["eff3", "eff4", "eff5"]
+  ROI_HEADS:
+    NAME: "CascadeROIHeads"
+    NUM_CLASSES: 12
+    IN_FEATURES: ["p3", "p4", "p5", "p6", "p7"]
+    SOFT_NMS_ENABLED: False
+    SOFT_NMS_METHOD: "linear"
+    SOFT_NMS_SIGMA: 0.5
+  ANCHOR_GENERATOR:
+    SIZES: [[8], [16], [32], [64], [128]]  # One size for each in feature map
+    ASPECT_RATIOS: [[0.5, 1.0, 2.0]]  # Three aspect ratios (same for all in feature maps)
+  ROI_BOX_HEAD:
+    CLS_AGNOSTIC_BBOX_REG: True
+    NORM: "SyncBN"
+  RPN:
+    POST_NMS_TOPK_TRAIN: 2000
+    IN_FEATURES: ["p3", "p4", "p5", "p6", "p7"]
+    PRE_NMS_TOPK_TRAIN: 2000  # Per FPN level
+    PRE_NMS_TOPK_TEST: 1000  # Per FPN level
+SOLVER:
+  IMS_PER_BATCH: 2
+  MAX_ITER: 1000
+  STEPS: (15000, 18000)
+DATASETS:
+  TRAIN: ("visdrone_train",)
+  TEST: ("visdrone_val",)
+
+TEST:
+  DETECTIONS_PER_IMAGE: 500
+  AUG:
+    ENABLED: True
+    MIN_SIZES: (600, 700, 800, 900, 1000, 1100, 1200)
+    MAX_SIZE: 2000
+    FLIP: True

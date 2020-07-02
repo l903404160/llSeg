@@ -153,6 +153,7 @@ class RepeatFactorTrainingSampler(Sampler):
             else:
                 yield from indices
 
+
 class InferenceSampler(Sampler):
     """
     Produce indices for inference

@@ -1,0 +1,49 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_RCNN_FPN.yaml"
+
+OUTPUT_DIR: "./Cascade_X101_30K"
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704, 736, 768, 800)
+  MAX_SIZE_TRAIN: 1536
+MODEL:
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  FPN:
+    NORM: "SyncBN"
+  ROI_HEADS:
+    NAME: "CascadeROIHeads"
+    NUM_CLASSES: 12
+    NMS_THRESH_TEST: 0.1
+    SOFT_NMS_ENABLED: True
+    SOFT_NMS_METHOD: "linear"
+    SOFT_NMS_SIGMA: 0.5
+  ANCHOR_GENERATOR:
+    SIZES: [[8], [16], [32], [64], [128]]  # One size for each in feature map
+    ASPECT_RATIOS: [[0.6, 1.0, 1.5]]  # Three aspect ratios (same for all in feature maps)
+  ROI_BOX_HEAD:
+    CLS_AGNOSTIC_BBOX_REG: True
+    NORM: "SyncBN"
+  RPN:
+    POST_NMS_TOPK_TRAIN: 2000
+  RESNETS:
+    NORM: "SyncBN"
+    STRIDE_IN_1X1: False  # this is a C2 model
+    NUM_GROUPS: 32
+    WIDTH_PER_GROUP: 8
+    DEPTH: 101
+    DEFORM_ON_PER_STAGE: (False, False, True, True)
+    DEFORM_MODULATED: False
+    DEFORM_NUM_GROUPS: 1
+SOLVER:
+  IMS_PER_BATCH: 16
+  MAX_ITER: 20000
+  STEPS: (15000, 18000)
+DATASETS:
+  TRAIN: ("visdrone_train",)
+  TEST: ("visdrone_val",)
+
+TEST:
+  DETECTIONS_PER_IMAGE: 500
+  AUG:
+    ENABLED: True
+    MIN_SIZES: (800, 900, 1000, 1100, 1200)
+    MAX_SIZE: 2000
+    FLIP: True

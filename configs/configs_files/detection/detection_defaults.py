@@ -26,6 +26,7 @@ _C.MODEL.LOAD_PROPOSALS = False
 _C.MODEL.MASK_ON = False
 _C.MODEL.KEYPOINT_ON = False
 _C.MODEL.DEVICE = "cuda"
+_C.MODEL.BUILDER = "base_rcnn_builder"
 _C.MODEL.META_ARCHITECTURE = "GeneralizedRCNN"
 
 # Path (a file path, or URL like detectron2://.., https://..) to a checkpoint file
@@ -124,7 +125,7 @@ _C.DATALOADER.FILTER_EMPTY_ANNOTATIONS = True
 # ---------------------------------------------------------------------------- #
 _C.MODEL.BACKBONE = CN()
 
-_C.MODEL.BACKBONE.NAME = "build_resnet_backbone"
+_C.MODEL.BACKBONE.NAME = "resnet_builder"
 # Freeze the first several stages so they are not trained.
 # There are 5 stages in ResNet. The first is a convolution, and the following
 # stages are each group of residual blocks.
@@ -272,6 +273,12 @@ _C.MODEL.ROI_HEADS.NMS_THRESH_TEST = 0.5
 # If True, augment proposals with ground-truth boxes before sampling proposals to
 # train ROI heads.
 _C.MODEL.ROI_HEADS.PROPOSAL_APPEND_GT = True
+
+# Add Soft - Nms
+_C.MODEL.ROI_HEADS.SOFT_NMS_ENABLED = False
+_C.MODEL.ROI_HEADS.SOFT_NMS_METHOD = "linear"
+_C.MODEL.ROI_HEADS.SOFT_NMS_SIGMA = 0.5
+_C.MODEL.ROI_HEADS.SOFT_NMS_PRUNE = 0.001
 
 # ---------------------------------------------------------------------------- #
 # Box Head
@@ -432,6 +439,12 @@ _C.MODEL.RETINANET.SCORE_THRESH_TEST = 0.05
 _C.MODEL.RETINANET.TOPK_CANDIDATES_TEST = 1000
 _C.MODEL.RETINANET.NMS_THRESH_TEST = 0.5
 
+# Soft - Nms
+_C.MODEL.RETINANET.SOFT_NMS_ENABLE = False
+_C.MODEL.RETINANET.SOFT_NMS_METHOD = "linear"
+_C.MODEL.RETINANET.SOFT_NMS_SIGMA = 0.5
+_C.MODEL.RETINANET.SOFT_NMS_PRUNE = 0.001
+
 # Weights on (dx, dy, dw, dh) for normalizing Retinanet anchor regression targets
 _C.MODEL.RETINANET.BBOX_REG_WEIGHTS = (1.0, 1.0, 1.0, 1.0)
 
@@ -449,7 +462,7 @@ _C.MODEL.RETINANET.SMOOTH_L1_LOSS_BETA = 0.1
 _C.MODEL.RESNETS = CN()
 
 _C.MODEL.RESNETS.DEPTH = 50
-_C.MODEL.RESNETS.OUT_FEATURES = ["res4"]  # res4 for C4 backbone, res2..5 for FPN backbone
+_C.MODEL.RESNETS.OUT_FEATURES = ["res4", "res5"]  # res4 for C4 backbone, res2..5 for FPN backbone
 
 # Number of groups to use; 1 ==> ResNet; > 1 ==> ResNeXt
 _C.MODEL.RESNETS.NUM_GROUPS = 1

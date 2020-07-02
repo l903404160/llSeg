@@ -5,15 +5,16 @@ import copy
 import torch
 import logging
 import torch.nn as nn
+import numpy as np
 
 from typing import Dict, Any, List, Optional
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 from .functional import get_unexpected_parameters_message, get_missing_parameters_message, _strip_prefix_if_present, _filter_reused_missing_keys
 
-__all__ = ["Checkopointer", "PeriodicCheckpointer"]
+__all__ = ["Checkpointer", "PeriodicCheckpointer"]
 
 
-class Checkopointer(object):
+class Checkpointer(object):
     """
     A checkpointer that can save or load model as well as extra checkpointable objects.
     """
@@ -96,6 +97,25 @@ class Checkopointer(object):
         except IOError:
             return ""
         return os.path.join(self.save_dir, last_saved)
+
+    def _convert_ndarray_to_tensor(self, state_dict: Dict[str, Any]) -> None:
+        """
+        In-place convert all numpy arrays in the state_dict to torch tensor.
+        Args:
+            state_dict (dict): a state-dict to be loaded to the model.
+                Will be modified.
+        """
+        # model could be an OrderedDict with _metadata attribute
+        # (as returned by Pytorch's state_dict()). We should preserve these
+        # properties.
+        for k in list(state_dict.keys()):
+            v = state_dict[k]
+            if not isinstance(v, np.ndarray) and not isinstance(v, torch.Tensor):
+                raise ValueError(
+                    "Unsupported type found in checkpoint! {}: {}".format(k, type(v))
+                )
+            if not isinstance(v, torch.Tensor):
+                state_dict[k] = torch.from_numpy(v)
 
     def get_all_checkpoint_files(self) -> List[str]:
         all_model_checkpoints = [

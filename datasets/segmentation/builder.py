@@ -7,7 +7,6 @@ from utils.comm import get_world_size
 
 
 from datasets.metacatalog.catalog import DatasetCatalog
-
 from datasets.common import MapDataset, DatasetFromList
 from datasets.segmentation.seg_mapper import SegDatasetMapper
 from datasets.samplers import TrainingSampler, InferenceSampler

@@ -1,19 +1,28 @@
 """
     entrance of detection
 """
-from utils.registry import Registry
+import torch
 from models import MODEL_BUILDER_REGISTRY
-
-SEGMENTATION_REGISTRY = Registry("SEGMENTATION")
+from .base import GeneralizedRCNN
+from .retina_base import RetinaNet
 
 
 @MODEL_BUILDER_REGISTRY.register()
-def detection_builder(cfg):
+def base_rcnn_builder(cfg):
     """
     :param cfg:
-    :return:  segmentation model
+    :return:  detection model
     """
-    pass
-    # TODO complete the detection code.
-    # segmentation_model = GeneralSemanticSegmentationModel(cfg)
-    # return segmentation_model
+    detection_model = GeneralizedRCNN(cfg)
+    detection_model.to(torch.device(cfg.MODEL.DEVICE))
+    return detection_model
+
+@MODEL_BUILDER_REGISTRY.register()
+def base_retina_builder(cfg):
+    """
+    :param cfg:
+    :return:  detection model
+    """
+    detection_model = RetinaNet(cfg)
+    detection_model.to(torch.device(cfg.MODEL.DEVICE))
+    return detection_model

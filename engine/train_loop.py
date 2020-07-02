@@ -93,9 +93,8 @@ class TrainerBase:
                     self.run_step()
                     self.after_step()
             except Exception:
-                logger.exception(" Exception during training: ")
+                logger.exception("Exception during training:")
                 raise
-
             finally:
                 self.after_train()
 

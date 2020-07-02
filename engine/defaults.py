@@ -20,9 +20,10 @@ from torch.nn.parallel import DistributedDataParallel
 from models import model_builder
 from solver import build_optimizer, build_lr_scheduler
 from utils.checkpointers.generic import GenericCheckpoint
+from utils.checkpointers.detection_checkpoint import DetectionCheckpointer
 from .train_loop import SimpleTrainer
 from . import hooks
-from evaluation.evaluator import DatasetEvaluator, inference_on_dataset, inference_on_dataset_with_multi_scale
+from evaluation.evaluator import DatasetEvaluator, inference_on_dataset, inference_on_dataset_with_multi_scale, inference_on_detection_dataset
 from evaluation.testing import verify_results, print_csv_format
 
 
@@ -232,11 +233,19 @@ class DefaultTrainer(SimpleTrainer):
         super(DefaultTrainer, self).__init__(model, data_loader, optimizer)
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
-        self.checkpointer = GenericCheckpoint(
+        # TODO Choice Checkpoint
+        # self.checkpointer = GenericCheckpoint(
+        #     model,
+        #     cfg.OUTPUT_DIR,
+        #     optimizer=optimizer,
+        #     scheduler=self.scheduler
+        # )
+        self.checkpointer = DetectionCheckpointer(
+            # Assume you want to save checkpoints together with logs/statistics
             model,
             cfg.OUTPUT_DIR,
             optimizer=optimizer,
-            scheduler=self.scheduler
+            scheduler=self.scheduler,
         )
         self.start_iter = 0
         self.max_iter = cfg.SOLVER.MAX_ITER
@@ -332,7 +341,7 @@ class DefaultTrainer(SimpleTrainer):
 
     def train(self):
         super().train(self.start_iter, self.max_iter)
-        if len(self.cfg.TEST_EXPECTED_RESULTS) and comm.is_main_process():
+        if len(self.cfg.TEST.EXPECTED_RESULTS) and comm.is_main_process():
             assert hasattr(
                 self, "_last_eval_results"
             ), "No evaluation results obtained during training!"
@@ -447,7 +456,10 @@ class DefaultTrainer(SimpleTrainer):
                     )
                     results[dataset_name] = {}
                     continue
-            results_i = inference_on_dataset(model, data_loader, evaluator)
+            # Segmentation
+            # results_i = inference_on_dataset(model, data_loader, evaluator)
+            # Detection
+            results_i = inference_on_detection_dataset(model, data_loader, evaluator)
             results[dataset_name] = results_i
             if comm.is_main_process():
                 assert isinstance(

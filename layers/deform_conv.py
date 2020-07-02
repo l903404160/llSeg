@@ -1,3 +1,5 @@
+# Ref : https://github.com/facebookresearch/detectron2/blob/master/detectron2/layers/deform_conv.py
+
 import math
 from functools import lru_cache
 import torch
@@ -7,7 +9,8 @@ from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 from torch.nn.modules.utils import _pair
 
-# import cuda_tools
+# 后期将detectron2的这些操作进行编译
+from detectron2 import _C as cuda_tools
 
 from .wrappers import _NewEmptyTensorOp
 

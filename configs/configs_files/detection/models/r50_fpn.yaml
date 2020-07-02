@@ -1,0 +1,22 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_RCNN_FPN.yaml"
+
+OUTPUT_DIR: "./output"
+MODEL:
+  WEIGHTS: "detectron2://ImageNetPretrained/MSRA/R-50.pkl"
+  ROI_HEADS:
+    NUM_CLASSES: 12
+  RESNETS:
+    DEPTH: 50
+SOLVER:
+  IMS_PER_BATCH: 16
+  MAX_ITER: 90000
+DATASETS:
+  TRAIN: ("visdrone_train",)
+  TEST: ("visdrone_val",)
+
+TEST:
+  AUG:
+    ENABLED: True
+    MIN_SIZES: (400, 500, 600, 700, 800, 900, 1000, 1100, 1200)
+    MAX_SIZE: 2000
+    FLIP: True
