@@ -7,3 +7,4 @@ from .roi_align import ROIAlign
 from .blocks import CNNBlockBase
 from .soft_nms_layer import *
 from .effnet_layers.ops import *
+from .anchorfree.cornernet_layers import *

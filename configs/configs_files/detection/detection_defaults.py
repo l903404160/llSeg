@@ -495,6 +495,53 @@ _C.MODEL.RESNETS.DEFORM_MODULATED = False
 # Number of groups in deformable conv.
 _C.MODEL.RESNETS.DEFORM_NUM_GROUPS = 1
 
+# ---------------------------------------------------------------------------- #
+# AnchorFree Model
+# ---------------------------------------------------------------------------- #
+
+_C.MODEL.ANCHORFREE = CN()
+_C.MODEL.ANCHORFREE.ANCHORFREE_ON = False
+_C.MODEL.ANCHORFREE.ARCH = "CornerNet"
+# ---------------------------------------------------------------------------- #
+# Hourglass Backbone
+# ---------------------------------------------------------------------------- #
+
+_C.MODEL.HOURGLASS = CN()
+
+_C.MODEL.HOURGLASS.N = 5
+_C.MODEL.HOURGLASS.DIMS = [256, 256, 384, 384, 384, 512]
+_C.MODEL.HOURGLASS.MODULES = [2, 2, 2, 2, 2, 4]
+_C.MODEL.HOURGLASS.CNV_DIM = 256
+_C.MODEL.HOURGLASS.NSTACK = 2
+_C.MODEL.HOURGLASS.OUT_FEATURES = ['hg1', 'hg2']
+
+# ---------------------------------------------------------------------------- #
+# CornerNet Head
+# ---------------------------------------------------------------------------- #
+
+_C.MODEL.ANCHORFREE_HEADS = CN()
+_C.MODEL.ANCHORFREE_HEADS.NAME = "cornernet_head_builder"
+_C.MODEL.ANCHORFREE_HEADS.NUM_CLASSES = 80
+_C.MODEL.ANCHORFREE_HEADS.BATCH_SIZE_PER_IMAGE = 512
+_C.MODEL.ANCHORFREE_HEADS.POSITIVE_FRACTION = 0.25
+
+_C.MODEL.ANCHORFREE_HEADS.PULL_WEIGHT = 1e-1
+_C.MODEL.ANCHORFREE_HEADS.PUSH_WEIGHT = 1e-1
+_C.MODEL.ANCHORFREE_HEADS.REGR_WEIGHT = 1
+
+_C.MODEL.ANCHORFREE_HEADS.NMS_THRESH = 0.5
+
+_C.MODEL.ANCHORFREE_HEADS.SOFT_NMS = True
+_C.MODEL.ANCHORFREE_HEADS.SOFT_NMS_THRESH = 0.5
+_C.MODEL.ANCHORFREE_HEADS.SOFT_NMS_METHOD = "linear"
+_C.MODEL.ANCHORFREE_HEADS.SOFT_NMS_SIGMA = 0.5
+_C.MODEL.ANCHORFREE_HEADS.SOFT_NMS_PRUNE = 0.001
+
+# Decode configs
+_C.MODEL.ANCHORFREE_HEADS.K = 100
+_C.MODEL.ANCHORFREE_HEADS.MAX_KERNEL = 3
+_C.MODEL.ANCHORFREE_HEADS.AE_THRESH = 0.5
+_C.MODEL.ANCHORFREE_HEADS.NUM_DETS = 1000
 
 # ---------------------------------------------------------------------------- #
 # Solver
@@ -552,6 +599,8 @@ _C.SOLVER.CLIP_GRADIENTS.CLIP_VALUE = 1.0
 # Floating point number p for L-p norm to be used with the "norm"
 # gradient clipping type; for L-inf, please specify .inf
 _C.SOLVER.CLIP_GRADIENTS.NORM_TYPE = 2.0
+_C.SOLVER.ANCHORFREE_ON = False
+_C.SOLVER.ANCHORFREE_OPTIMIZER = "adam"
 
 # ---------------------------------------------------------------------------- #
 # Specific test options

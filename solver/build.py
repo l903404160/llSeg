@@ -87,6 +87,7 @@ def maybe_add_gradient_clipping(
     optimizer.__class__ = OptimizerWithGradientClip
     return optimizer
 
+
 def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimizer:
     """
     Build an optimizer from config.
@@ -121,7 +122,11 @@ def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimiz
                 lr = cfg.SOLVER.BASE_LR * cfg.SOLVER.BIAS_LR_FACTOR
                 weight_decay = cfg.SOLVER.WEIGHT_DECAY_BIAS
             params += [{"params": [value], "lr": lr, "weight_decay": weight_decay}]
-    optimizer = torch.optim.SGD(params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM)
+
+    if cfg.SOLVER.ANCHORFREE_ON:
+        optimizer = torch.optim.Adam(params, cfg.SOLVER.BASE_LR)
+    else:
+        optimizer = torch.optim.SGD(params, cfg.SOLVER.BASE_LR, momentum=cfg.SOLVER.MOMENTUM)
     optimizer = maybe_add_gradient_clipping(cfg, optimizer)
     return optimizer
 

@@ -188,6 +188,12 @@ class ResizeFromScales(TransformGen):
         neww = int(neww + 0.5)
         newh = int(newh + 0.5)
 
+        min_edge_length = min(neww, newh)
+        if min_edge_length < self.short_edge_length:
+            recover_scale = (self.short_edge_length + 1) / min_edge_length
+            neww = int(neww * recover_scale + 0.5)
+            newh = int(newh * recover_scale + 0.5)
+
         return ResizeTransform(h, w, newh, neww, self.interp)
 
 

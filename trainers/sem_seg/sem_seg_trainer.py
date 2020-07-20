@@ -1,14 +1,17 @@
-import os
-from configs.sem_seg_configs.baseline_config import BS_config as config
+import logging
+from collections import OrderedDict
 
-from engine.defaults import DefaultTrainer, default_setup
+from engine.defaults import DefaultTrainer
+
 from datasets.segmentation.builder import build_segmentation_train_loader
 from datasets.segmentation.builder import build_segmentation_test_loader
 from datasets.metacatalog.catalog import MetadataCatalog
+
 from evaluation.sem_seg_evaluator import SemSegEvaluator
 from evaluation.evaluator import DatasetEvaluators
 
 
+# Segmentation trainer
 class SegTrainer(DefaultTrainer):
     def __init__(self, cfg):
         super(SegTrainer, self).__init__(cfg)
@@ -36,7 +39,6 @@ class SegTrainer(DefaultTrainer):
             output_folder = os.path.join(cfg.OUTPUT_DIR, "inference")
 
         evaluator_list = []
-        # TODO MetadataCatalog
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
         if evaluator_type in ["sem_seg", "coco_panoptic_seg"]:
             evaluator_list.append(
@@ -58,30 +60,19 @@ class SegTrainer(DefaultTrainer):
             return evaluator_list[0]
         return DatasetEvaluators(evaluator_list)
 
-def main(args):
-    default_setup(config, args)
+    @classmethod
+    def test_with_multi_scale(cls, cfg, model):
+        logger = logging.getLogger("OUCWheel.Multi_scale_eval")
+        # In the end of training, run an evaluation with TTA
+        # Only support some R-CNN models.
+        logger.info("Running inference with test-time augmentation ...")
+        evaluators = [
+            cls.build_evaluator(
+                cfg, name, output_folder=os.path.join(cfg.OUTPUT_DIR, "inference_MultiScale")
+            )
+            for name in cfg.DATASETS.TEST
+        ]
+        res = cls.test_multi_scale(cfg, model, evaluators)
+        res = OrderedDict({k + "_MultiScale": v for k, v in res.items()})
+        return res
 
-    trainer = SegTrainer(config)
-
-    trainer.resume_or_load(config.MODEL.WEIGHTS)
-
-    return trainer.train()
-
-if __name__ == '__main__':
-    from engine.defaults import default_setup, default_argument_setup
-    from engine.launch import launch
-
-    import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'
-
-    args = default_argument_setup().parse_args()
-    args.num_gpus = 2
-    print('Command Line Args: ', args)
-
-    launch(
-        main_func=main, num_gpus_per_machine=args.num_gpus,
-        num_machines=args.num_machines,
-        machine_rank=args.machine_rank,
-        dist_url=args.dist_url,
-        args=(args, )
-    )

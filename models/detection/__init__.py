@@ -5,6 +5,7 @@ import torch
 from models import MODEL_BUILDER_REGISTRY
 from .base import GeneralizedRCNN
 from .retina_base import RetinaNet
+from .anchorfree_base import GeneralizedAnchorFreeDetector
 
 
 @MODEL_BUILDER_REGISTRY.register()
@@ -24,5 +25,17 @@ def base_retina_builder(cfg):
     :return:  detection model
     """
     detection_model = RetinaNet(cfg)
+    detection_model.to(torch.device(cfg.MODEL.DEVICE))
+    return detection_model
+
+
+@MODEL_BUILDER_REGISTRY.register()
+def base_anchorfree_builder(cfg):
+    """
+    Args:
+        cfg:
+    Returns:
+    """
+    detection_model = GeneralizedAnchorFreeDetector(cfg)
     detection_model.to(torch.device(cfg.MODEL.DEVICE))
     return detection_model

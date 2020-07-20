@@ -1,3 +1,4 @@
+import math
 import torch
 import numpy as np
 
@@ -447,3 +448,101 @@ def filter_empty_instances(instances, by_box=True, by_mask=True, box_threshold=1
     for x in r[1:]:
         m = m & x
     return instances[m]
+
+
+def generate_cornernet_heatmap_tag_regr(outout_size, max_tag_length, num_classes, instances):
+    h, w = outout_size
+    tl_heatmap = torch.zeros(num_classes, h, w)
+    br_heatmap = torch.zeros(num_classes, h, w)
+
+    tl_regr = torch.zeros(max_tag_length, 2)
+    br_regr = torch.zeros(max_tag_length, 2)
+
+    tl_tag = torch.zeros(max_tag_length)
+    br_tag = torch.zeros(max_tag_length)
+
+    tag_mask = torch.zeros(max_tag_length).long()
+
+    # TODO
+    ratio = 128 / 513
+
+    gt_boxes = instances.gt_boxes
+    gt_classes = instances.gt_classes
+
+    for i in range(len(gt_boxes)):
+        bbox = gt_boxes[i].tensor[0]
+        fxtl, fytl, fxbr, fybr = bbox * ratio
+        xtl, ytl, xbr, ybr = int(fxtl), int(fytl), int(fxbr), int(fybr)
+
+        category = gt_classes[i]
+
+        width = bbox[2] - bbox[0]
+        height = bbox[3] - bbox[1]
+
+        width = math.ceil(width * ratio)
+        height = math.ceil(height * ratio)
+
+        #TODO min_overlap
+        min_overlap = 0.3
+        radius = gaussian_radius((height, width), min_overlap=min_overlap)
+        radius = max(0, int(radius))
+        draw_gaussian(tl_heatmap[category], [xtl, ytl], radius)
+        draw_gaussian(br_heatmap[category], [xbr, ybr], radius)
+
+        tl_regr[i, :] = torch.tensor([fxtl - xtl, fytl - ytl])
+        br_regr[i, :] = torch.tensor([fxbr - xbr, fybr - ybr])
+        tl_tag[i] = ytl * outout_size[1] + xtl
+        br_tag[i] = ybr * outout_size[1] + xbr
+        tag_mask[i] = 1
+    return tl_heatmap, br_heatmap, tl_regr, br_regr, tag_mask, tl_tag.long(), br_tag.long()
+
+
+def gaussian_radius(det_size, min_overlap):
+    height, width = det_size
+
+    a1 = 1
+    b1 = (height + width)
+    c1 = width * height * (1 - min_overlap) / (1 + min_overlap)
+    sq1 = math.sqrt(b1 ** 2 - 4 * a1*c1)
+    r1 = (b1 - sq1) / (2 * a1)
+
+    a2 = 4
+    b2 = 2*(height + width)
+    c2 = (1 - min_overlap) * width * height
+    sq2 = math.sqrt(b2**2 - 4 * a2 *c2)
+    r2 = (b2 - sq2) / (2*a2)
+
+    a3 = 4*min_overlap
+    b3 = -2 * min_overlap * (height + width)
+    c3 = (min_overlap - 1) * width * height
+    sq3 = math.sqrt(b3 ** 2 - 4*a3*c3)
+    r3 = (b3 + sq3) / (2*a3)
+    return min(r1, r2, r3)
+
+
+def gaussian2D(shape, sigma=1):
+    m, n = [(ss - 1.) / 2. for ss in shape]
+    y, x = np.ogrid[-m:m+1,-n:n+1]
+
+    h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
+    h[h < np.finfo(h.dtype).eps * h.max()] = 0
+    h = torch.from_numpy(h)
+    return h
+
+
+def draw_gaussian(heatmap, center, radius):
+    diameter = 2*radius + 1
+    gaussian = gaussian2D((diameter, diameter), sigma=diameter/6).float()
+
+    x, y = center
+
+    height, width = heatmap.shape[0:2]
+
+    left, right = min(x, radius), min(width - x, radius + 1)
+    top, bottom = min(y, radius), min(height - y, radius + 1)
+
+    masked_heatmap = heatmap[y - top:y+bottom, x - left:x + right]
+    masked_gaussian = gaussian[radius - top:radius + bottom, radius-left:radius + right]
+    # TODO 这里存在一定的问题，这种实现方式
+    masked_heatmap[:, :] = torch.where(masked_heatmap > masked_gaussian, masked_heatmap, masked_gaussian)
+
