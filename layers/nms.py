@@ -1,6 +1,24 @@
 import torch
+from layers import batched_soft_nms
 from torchvision.ops import boxes as box_ops
 from torchvision.ops import nms
+
+
+def generalized_batched_nms(boxes, scores, idxs, iou_threshold,
+                            score_threshold=0.001, nms_type='normal'):
+    assert nms_type in ['normal', 'softnms-linear', 'softnms-gaussian']
+    assert boxes.shape[-1] == 4
+
+    if nms_type == "normal":
+        keep = batched_nms(boxes, scores, idxs, iou_threshold)
+    elif nms_type.startswith("softnms"):
+        keep = batched_soft_nms(boxes, scores, idxs, iou_threshold,
+                               score_threshold=score_threshold,
+                               soft_mode=nms_type.lstrip("softnms-"))
+    else:
+        raise NotImplementedError("NMS type not implemented: \"{}\"".format(nms_type))
+
+    return keep
 
 
 def batched_nms(
@@ -124,3 +142,30 @@ def batched_nms_rotated(boxes, scores, idxs, iou_threshold):
     boxes_for_nms[:, :2] += offsets[:, None]
     keep = nms_rotated(boxes_for_nms, scores, iou_threshold)
     return keep
+
+
+# ml_nms for fcos
+# TODO update the implementation it is not easy to be understand and use
+def ml_nms(boxlist, nms_thresh, max_proposals=-1, score_field="scores", label_field="labels"):
+    """
+    Performs non-maximum suppression on a boxlist, with scores specified
+    in a boxlist field via score_field.
+
+    Args:
+        boxlist (detectron2.structures.Boxes):
+        nms_thresh (float):
+        max_proposals (int): if > 0, then only the top max_proposals are kept
+            after non-maximum suppression
+        score_field (str):
+    """
+    if nms_thresh <= 0:
+        return boxlist
+
+    boxes = boxlist.pred_boxes.tensor
+    scores = boxlist.scores
+    labels = boxlist.pred_classes
+    keep = batched_nms(boxes, scores, labels, nms_thresh)
+    if max_proposals > 0:
+        keep = keep[:max_proposals]
+    boxlist = boxlist[keep]
+    return boxlist

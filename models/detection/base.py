@@ -38,9 +38,6 @@ class GeneralizedRCNN(nn.Module):
     def device(self):
         return self.pixel_mean.device
 
-    # TODO turn off vis all the time
-    # def visualize_training(self, barched_inputs, proposals):
-
     def forward(self, batched_inputs):
         """
         Args:

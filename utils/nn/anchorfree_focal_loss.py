@@ -125,6 +125,5 @@ class CornerNetFocalLoss(nn.Module):
         regr_loss += self._regr_loss(br_regr, gt_br_regr, gt_mask)
         regr_loss = self.regr_weight * regr_loss
 
-        print("focal_loss + pull_loss + push_loss + regr_loss: " , focal_loss, pull_loss, push_loss, regr_loss)
         loss = focal_loss + pull_loss + push_loss + regr_loss
         return loss.unsqueeze(0)

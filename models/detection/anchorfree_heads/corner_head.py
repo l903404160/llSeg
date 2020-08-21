@@ -311,7 +311,7 @@ class CornerNetHead(AnchorFreeHeadBase):
 
 
 @DET_ANCHORFREE_HEADS_REGISRY.register()
-def cornernet_head_builder(cfg):
+def cornernet_head_builder(cfg, input_shape=None):
     corner_head = CornerNetHead(cfg)
     return corner_head
 

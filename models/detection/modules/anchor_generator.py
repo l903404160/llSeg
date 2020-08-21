@@ -1,7 +1,8 @@
+import copy
 import math
-from typing import List
 import torch
 from torch import nn
+from typing import List
 
 from configs.config import configurable
 from layers import ShapeSpec
@@ -359,3 +360,49 @@ def build_anchor_generator(cfg, input_shape):
     """
     anchor_generator = cfg.MODEL.ANCHOR_GENERATOR.NAME
     return ANCHOR_GENERATOR_REGISTRY.get(anchor_generator)(cfg, input_shape)
+
+
+class ShiftGenerator(nn.Module):
+    """
+    For a set of image sizes and feature maps, computes a set of shifts.
+    """
+    def __init__(self, cfg, input_shape: List[ShapeSpec]):
+        super().__init__()
+        # fmt: off
+        self.strides = [x.stride for x in input_shape]
+        self.offset = 0
+        # fmt: on
+        """
+        strides (list[int]): stride of each input feature.
+        """
+
+        self.num_features = len(self.strides)
+
+    def grid_shifts(self, grid_sizes, device):
+        shifts_over_all_feature_maps = []
+        for size, stride in zip(grid_sizes, self.strides):
+            shift_x, shift_y = _create_grid_offsets(size, stride, self.offset, device)
+            shifts = torch.stack((shift_x, shift_y), dim=1)
+
+            shifts_over_all_feature_maps.append(shifts)
+
+        return shifts_over_all_feature_maps
+
+    def forward(self, features):
+        """
+        Args:
+            features (list[Tensor]): list of backbone feature maps on which to generate shifts.
+        Returns:
+            list[list[Tensor]]: a list of #image elements. Each is a list of #feature level tensors.
+                The tensors contains shifts of this image on the specific feature level.
+        """
+        num_images = len(features[0])
+        grid_sizes = [feature_map.shape[-2:] for feature_map in features]
+        shifts_over_all_feature_maps = self.grid_shifts(
+            grid_sizes, features[0].device)
+
+        shifts = [
+            copy.deepcopy(shifts_over_all_feature_maps)
+            for _ in range(num_images)
+        ]
+        return shifts

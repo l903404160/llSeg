@@ -3,11 +3,9 @@ import datetime
 import io
 import json
 import logging
-import numpy as np
 import os
 import pycocotools.mask as mask_util
 from utils.timer import Timer
-# TODO File lock
 from utils.file_io import file_lock
 
 from structures import Boxes, BoxMode, PolygonMasks
@@ -47,7 +45,6 @@ def load_coco_json(json_file, image_root, dataset_name=None, extra_annotation_ke
            The results do not have the "image" field.
     """
     from pycocotools.coco import COCO
-
     timer = Timer()
     json_file = os.fspath(json_file)
     with contextlib.redirect_stdout(io.StringIO()):

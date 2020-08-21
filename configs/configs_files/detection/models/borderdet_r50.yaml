@@ -1,0 +1,20 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_fcos.yaml"
+
+OUTPUT_DIR: "./borderdet_r50_fpn5_test"
+MODEL:
+  ANCHORFREE_HEADS:
+    NAME: "borderdet_head_builder"
+
+INPUT:
+  MIN_SIZE_TRAIN: (800,)
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MAX_SIZE_TEST: 1333
+DATASETS:
+  TRAIN: ("coco_2017_val",)
+  TEST: ("coco_2017_val",)
+SOLVER:
+  IMS_PER_BATCH: 16
+  BASE_LR: 0.01
+  STEPS: (60000, 80000)
+  MAX_ITER: 90000

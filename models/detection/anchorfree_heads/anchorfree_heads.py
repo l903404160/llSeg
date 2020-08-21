@@ -9,6 +9,9 @@ class AnchorFreeHeadBase(nn.Module):
     def __init__(self):
         super(AnchorFreeHeadBase, self).__init__()
 
+    def forward(self, in_features):
+        raise NotImplementedError
+
     def forward_bbox(self, features, targets):
         raise NotImplementedError
 
@@ -42,12 +45,12 @@ class AnchorFreeHead(nn.Module):
             Loss(training) / Predicton(testing)
         """
         # compute the predictions
-        feats = self.anchorfree_head(in_features)
+        feats = self.anchorfree_head(in_features, image_sizes)
         if self.training:
-            loss = self.anchorfree_head.forward_bbox(feats, targets=targets)
+            loss = self.anchorfree_head.forward_bbox(feats, targets=targets) #, image_sizes=image_sizes, in_features=in_features
             return loss
         else:
-            predictions = self.anchorfree_head.inference(feats, image_sizes=image_sizes)
+            predictions = self.anchorfree_head.inference(feats, image_sizes=image_sizes, in_features=feats)
             return predictions
 
 

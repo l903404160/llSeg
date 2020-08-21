@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 from models.detection.backbone import backbone_builder
-from models.detection.anchorfree_heads import AnchorFreeHead
+from models.detection.anchorfree_heads.anchorfree_heads import AnchorFreeHead
 from structures import ImageList
 from models.detection.modules.postprocessing import detector_postprocess
 

@@ -5,11 +5,12 @@ from collections import OrderedDict
 from engine.defaults import DefaultTrainer
 from datasets.metacatalog.catalog import MetadataCatalog
 
-from evaluation import DatasetEvaluators, VisDroneEvaluator
+from evaluation import DatasetEvaluators, VisDroneEvaluator, COCOEvaluator
 from datasets.detection.builder import build_detection_train_loader, build_detection_test_loader
 
 # TODO Test Aug
 from models.detection.test_time_augmentation import GeneralizedRCNNWithTTA
+
 
 # Detection trainer
 class DetTrainer(DefaultTrainer):
@@ -55,6 +56,8 @@ class DetTrainer(DefaultTrainer):
 
         if evaluator_type in ["visdrone"]:
             evaluator_list.append(VisDroneEvaluator(dataset_name, cfg, True, output_folder))
+        elif evaluator_type in ["coco"]:
+            evaluator_list.append(COCOEvaluator(dataset_name, cfg, True, output_folder))
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
         return DatasetEvaluators(evaluator_list)

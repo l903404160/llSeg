@@ -462,7 +462,7 @@ _C.MODEL.RETINANET.SMOOTH_L1_LOSS_BETA = 0.1
 _C.MODEL.RESNETS = CN()
 
 _C.MODEL.RESNETS.DEPTH = 50
-_C.MODEL.RESNETS.OUT_FEATURES = ["res4", "res5"]  # res4 for C4 backbone, res2..5 for FPN backbone
+_C.MODEL.RESNETS.OUT_FEATURES = ["res3", "res4", "res5"]  # res4 for C4 backbone, res2..5 for FPN backbone
 
 # Number of groups to use; 1 ==> ResNet; > 1 ==> ResNeXt
 _C.MODEL.RESNETS.NUM_GROUPS = 1
@@ -498,10 +498,70 @@ _C.MODEL.RESNETS.DEFORM_NUM_GROUPS = 1
 # ---------------------------------------------------------------------------- #
 # AnchorFree Model
 # ---------------------------------------------------------------------------- #
-
 _C.MODEL.ANCHORFREE = CN()
 _C.MODEL.ANCHORFREE.ANCHORFREE_ON = False
 _C.MODEL.ANCHORFREE.ARCH = "CornerNet"
+_C.MODEL.ANCHORFREE.NAME = "fcos_head_builder"
+
+# ---------------------------------------------------------------------------- #
+# FCOS
+# ---------------------------------------------------------------------------- #
+_C.MODEL.FCOS_HEADS = CN()
+_C.MODEL.FCOS_HEADS.NUM_CLASSES = 80
+_C.MODEL.FCOS_HEADS.IN_FEATURES = ["p3", "p4", "p5", "p6", "p7"]
+_C.MODEL.FCOS_HEADS.FPN_STRIDES = [8, 16, 32, 64, 128]
+_C.MODEL.FCOS_HEADS.FPN_CHANNELS = 256
+_C.MODEL.FCOS_HEADS.PRIOR_PROB = 0.01
+_C.MODEL.FCOS_HEADS.INFERENCE_THRESH_TRAIN = 0.05
+_C.MODEL.FCOS_HEADS.INFERENCE_THRESH_TEST = 0.05
+_C.MODEL.FCOS_HEADS.NMS_TYPE = 'normal'
+_C.MODEL.FCOS_HEADS.NMS_THRESH = 0.6
+_C.MODEL.FCOS_HEADS.PRE_NMS_TOPK_TRAIN = 1000
+_C.MODEL.FCOS_HEADS.PRE_NMS_TOPK_TEST = 1000
+_C.MODEL.FCOS_HEADS.POST_NMS_TOPK_TRAIN = 100
+_C.MODEL.FCOS_HEADS.POST_NMS_TOPK_TEST = 100
+_C.MODEL.FCOS_HEADS.TOP_LEVELS = 2
+_C.MODEL.FCOS_HEADS.NORM = "GN"
+_C.MODEL.FCOS_HEADS.USE_SCALE = True
+
+# Mutiply centerness before threshold
+# This will affect the final performance by about 0.05 AP but save some time
+_C.MODEL.FCOS_HEADS.THRESH_WITH_CTR = False
+
+_C.MODEL.FCOS_HEADS.LOSS_ALPHA = 0.25
+_C.MODEL.FCOS_HEADS.LOSS_GAMMA = 2.0
+_C.MODEL.FCOS_HEADS.SIZES_OF_INTEREST = [64, 128, 256, 512]
+_C.MODEL.FCOS_HEADS.OBJECT_SIZES_OF_INTEREST = [
+                [-1, 64],
+                [64, 128],
+                [128, 256],
+                [256, 512],
+                [512, float("inf")],
+            ]
+_C.MODEL.FCOS_HEADS.USE_RELU = True
+_C.MODEL.FCOS_HEADS.USE_DEFORMABLE = False
+
+# the number of convolutions used in the cls and bbox tower
+_C.MODEL.FCOS_HEADS.NUM_CLS_CONVS = 4
+_C.MODEL.FCOS_HEADS.NUM_BBOX_CONVS = 4
+_C.MODEL.FCOS_HEADS.NUM_SHARED_CONVS = 0
+_C.MODEL.FCOS_HEADS.CENTER_SAMPLE = True
+_C.MODEL.FCOS_HEADS.POS_RADIUS = 1.5
+_C.MODEL.FCOS_HEADS.LOC_LOSS_TYPE = "giou"
+_C.MODEL.FCOS_HEADS.YIELD_PROPOSAL = False
+
+_C.MODEL.FCOS_HEADS.TWO_IN_FEATURES = ['p3']
+_C.MODEL.FCOS_HEADS.TWO_OUT_SHAPE = (7, 7)
+_C.MODEL.FCOS_HEADS.SCALES = [1/8]
+_C.MODEL.FCOS_HEADS.TWO_SAMPLING_RATIO = 0
+_C.MODEL.FCOS_HEADS.TWO_FC_DIM = 1024
+_C.MODEL.FCOS_HEADS.TWO_REG_IOU_TYPE = 'giou'
+_C.MODEL.FCOS_HEADS.BORDER_IOU_THRESH = 0.6
+_C.MODEL.FCOS_HEADS.BORDER_BBOX_STD = [0.5, 0.5, 0.5, 0.5],
+_C.MODEL.FCOS_HEADS.BBOX_REG_WEIGHTS = (1.0, 1.0, 1.0, 1.0),
+_C.MODEL.FCOS_HEADS.NUM_CONVS = 4
+_C.MODEL.FCOS_HEADS.BORDER_CENTER_ON_REG = True
+_C.MODEL.FCOS_HEADS.NORM_REG_TARGETS = True
 # ---------------------------------------------------------------------------- #
 # Hourglass Backbone
 # ---------------------------------------------------------------------------- #

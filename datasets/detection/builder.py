@@ -368,8 +368,7 @@ def build_detection_test_loader(cfg, dataset_name, mapper=None):
         ]
         if cfg.MODEL.LOAD_PROPOSALS
         else None,
-        # TODO remove 10
-    )[10:11]
+    )
 
     dataset = DatasetFromList(dataset_dicts)
     if mapper is None:
@@ -420,7 +419,7 @@ def build_anchorfree_detection_train_loader(cfg, mapper=None):
         if cfg.MODEL.KEYPOINT_ON
         else 0,
         proposal_files=cfg.DATASETS.PROPOSAL_FILES_TRAIN if cfg.MODEL.LOAD_PROPOSALS else None,
-    )[10:11]
+    )
     dataset = DatasetFromList(dataset_dicts, copy=False)
 
     # change the anchor free mapper

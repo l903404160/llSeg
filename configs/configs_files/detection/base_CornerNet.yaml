@@ -1,3 +1,4 @@
+OUTPUT_DIR: "./cornernet"
 MODEL:
   BUILDER: "base_anchorfree_builder"
   BACKBONE:
@@ -18,18 +19,18 @@ MODEL:
 INPUT:
   MIN_SIZE_TRAIN: (768,)
   MAX_SIZE_TRAIN: 1536
-  MIN_SIZE_TEST: 512
+  MIN_SIZE_TEST: 768
   MAX_SIZE_TEST: 1536
   CROP:
     TYPE: "absolute"
     SIZE: (512, 512)
 DATASETS:
-  TRAIN: ("coco_2017_val",)
+  TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
 SOLVER:
-  IMS_PER_BATCH: 2
+  IMS_PER_BATCH: 16
   BASE_LR: 2.5e-4
   STEPS: (200000,)
-  MAX_ITER: 1000 #250000
+  MAX_ITER: 250000
   ANCHORFREE_ON: True
   ANCHORFREE_OPTIMIZER: "adam"

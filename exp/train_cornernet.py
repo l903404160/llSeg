@@ -16,7 +16,6 @@ def setup(args):
     Create configs and perform basic setups.
     """
     cfg = get_detection_config()
-    print(args.config_file)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
@@ -50,17 +49,17 @@ def main(args):
 
 if __name__ == '__main__':
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
     args = default_argument_setup().parse_args()
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/base_CornerNet.yaml"
 
-    args.num_gpus = 1
+    args.num_gpus = 4
 
     # Weights
     # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
 
-    args.eval_only = True
+    args.eval_only = False
     args.resume = True
 
     print("Command Line Args:", args)

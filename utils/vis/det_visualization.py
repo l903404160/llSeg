@@ -48,10 +48,10 @@ if __name__ == "__main__":
     parser.add_argument("--conf-threshold", default=0.5, type=float, help="confidence threshold")
     args = parser.parse_args()
 
-    args.input = '/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101_test/inference_TTA/coco_instances_results.json'
-    args.output = '/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101_test/inference_TTA/vis'
-    args.dataset = 'visdrone_cluster_test'
-    args.conf_threshold = 0.3
+    args.input = '/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_test/inference/coco_instances_results.json'
+    args.output = '/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_test/inference/vis'
+    args.dataset = 'coco_2017_val'
+    args.conf_threshold = 0.4
 
     logger = setup_logger()
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     for p in predictions:
         pred_by_image[p["image_id"]].append(p)
 
-    dicts = list(DatasetCatalog.get(args.dataset))
+    dicts = list(DatasetCatalog.get(args.dataset))[10:11]
     metadata = MetadataCatalog.get(args.dataset)
     if hasattr(metadata, "thing_dataset_id_to_contiguous_id"):
 
