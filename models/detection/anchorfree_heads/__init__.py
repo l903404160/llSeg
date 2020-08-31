@@ -3,8 +3,6 @@ from utils.registry import Registry
 
 DET_ANCHORFREE_HEADS_REGISRY = Registry("DET_ANCHORFREE_HEAD")
 
-from .corner_head import cornernet_head_builder
-from .borderdet import borderdet_head_builder
 from .fcos.fcos_head import fcos_head_builder
 
 

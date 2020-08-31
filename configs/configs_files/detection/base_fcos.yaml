@@ -1,6 +1,6 @@
-OUTPUT_DIR: "./fcos_r50_new"
+OUTPUT_DIR: "./fcos_r50_darts_layer1"
 MODEL:
-  BUILDER: "base_fcos_builder"
+  BUILDER: "base_onesstageanchorfree_builder"
   BACKBONE:
     NAME: "retinanet_resnet_fpn_builder"
   RESNETS:
@@ -14,16 +14,18 @@ MODEL:
     IN_FEATURES: ["p3", "p4", "p5", "p6", "p7"]
     SIZES_OF_INTEREST: [64, 128, 256, 512]
     POST_NMS_TOPK_TRAIN: 256
+    NUM_CLS_CONVS: 4
+    NUM_BBOX_CONVS: 4
 INPUT:
   MIN_SIZE_TRAIN: (800,)
   MAX_SIZE_TRAIN: 1333
   MIN_SIZE_TEST: 800
   MAX_SIZE_TEST: 1333
 DATASETS:
-  TRAIN: ("coco_2017_val",)
+  TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
 SOLVER:
-  IMS_PER_BATCH: 4
+  IMS_PER_BATCH: 16
   BASE_LR: 0.01
   STEPS: (60000, 80000)
   MAX_ITER: 90000

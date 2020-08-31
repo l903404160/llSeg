@@ -13,6 +13,8 @@
 
 ## Performance 
 - [x] R-50-FPN FCOS COCO_2017 38.6%
+- [ ] R-50-FPN FCOS COCO_2017 Conv-2 in-progress
+- [ ] R-50-FPN FCOS COCO_2017 Conv-6 in-progress
 
 ## Improvements
 - [ ] Fuse a feature for designing another regression head.

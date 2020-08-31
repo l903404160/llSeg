@@ -231,7 +231,7 @@ class FCOSOutputs(nn.Module):
             "target_inds": target_inds
         }
 
-    def losses(self, logits_pred, reg_pred, ctrness_pred, locations, gt_instances, top_feats=None):
+    def losses(self, logits_pred, reg_pred, ctrness_pred, locations, gt_instances, top_feats=None, features=None, name=None):
         """
         Return the losses from a set of FCOS predictions and their associated ground-truth.
         Returns:

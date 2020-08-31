@@ -68,7 +68,7 @@ def main(args):
 if __name__ == "__main__":
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
     args = default_argument_setup().parse_args()
 
@@ -77,13 +77,15 @@ if __name__ == "__main__":
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/borderdet_r50.yaml"
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/detection/models/x101_fpn_cascade.yaml"
 
-    args.num_gpus = 1
+    args.num_gpus = 4
 
     # Weights
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_darts_layer2/model_0069999.pth"]
+
     # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
-    args.eval_only = True
-    args.resume = True
+    args.eval_only = False
+    args.resume = False
 
     print("Command Line Args:", args)
     launch(
