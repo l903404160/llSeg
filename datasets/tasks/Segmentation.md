@@ -34,6 +34,6 @@
 >       + `cityscapes.py`
 >       + `seg_mapper.py`
 >   + `common`
->       + *
+>       + all
 >   + `transforms`
->       + *
+>       + all
