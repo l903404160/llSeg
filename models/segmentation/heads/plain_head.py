@@ -62,7 +62,7 @@ class PlainHead(nn.Module):
 
 @SEG_HEAD_REGISTRY.register()
 def plainhead_builder(cfg):
-    from layers import get_norm
+    from layers.batch_norm import get_norm
     norm_layer = get_norm(cfg.MODEL.BN_LAYER)
     if norm_layer is None:
         norm_layer = nn.BatchNorm2d

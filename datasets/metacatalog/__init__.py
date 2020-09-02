@@ -5,7 +5,7 @@ from datasets.segmentation.seg_builtin import register_cityscapes, register_voc_
 from datasets.detection.det_builtin import register_coco, register_visdrone
 
 # Change the implementation like Detectron2. Use the env variable `OW_DATASETS` to indicate the root folder.
-_root = os.getenv("OW_DATASETS", "/home/haida_sunxin/lqx/code/llseg/ext/datasets")
+_root = os.getenv("OW_DATASETS", "/home/haida_sunxin/lqx/data/")
 
 # Detection
 register_coco(root=_root)

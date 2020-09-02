@@ -221,6 +221,7 @@ def get_norm(norm):
         }[norm]
     return norm
 
+
 def get_norm_with_channels(norm, out_channels):
     """
     Args:

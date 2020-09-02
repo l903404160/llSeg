@@ -1,6 +1,5 @@
 import os
-os.environ['OW_DATASETS'] = './datasets'
-os.environ['CUDA_VISIBLE_DEVICES'] = '7'
+os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
 from configs import get_sem_seg_config
 
 import engine.hooks as hooks
@@ -59,8 +58,8 @@ def main(args):
 if __name__ == '__main__':
 
     args = default_argument_setup().parse_args()
-    args.num_gpus = 1
-    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/non_local.yaml"
+    args.num_gpus = 2
+    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/baseline.yaml"
 
     launch(
         main_func=main, num_gpus_per_machine=args.num_gpus,
