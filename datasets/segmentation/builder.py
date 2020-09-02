@@ -109,37 +109,7 @@ def trainval_batch_collator(batch):
         batch_data_dict['width'] = item['width']
         return batch_data_dict
 
+
 def worker_init_reset_seed(worker_id):
     seed_all_rng(np.random.randint(2**31) + worker_id)
 
-
-if __name__ == '__main__':
-    from configs.sem_seg_configs.baseline_config import BS_config as cfg
-
-    cfg.DATASETS.TRAIN = ['voc_context_seg_train']
-    cfg.DATASETS.TEST = ['voc_context_seg_val']
-    cfg.DATASETS.ROOT = '//home/haida_sunxin/lqx/data/'
-    cfg.RESIZE_SHORT_EDGE = True
-    cfg.SHORTEST_EDGE = 480
-    cfg.INPUT.WIDTH_TRAIN = 480
-    cfg.INPUT.HEIGHT_TRAIN = 480
-    cfg.INPUT.WIDTH_TEST = 480
-    cfg.INPUT.HEIGHT_TEST = 480
-    # loader = build_segmentation_train_loader(cfg)
-    loader = build_segmentation_train_loader(cfg)
-    print('done')
-
-    import matplotlib.pyplot as plt
-
-    for data in loader:
-        print(data['image'].size())
-        print(data['sem_seg'].size())
-        temp_im = data['image'][0].numpy()
-        temp_lb = data['sem_seg'][0].numpy()
-        plt.subplot(1,2,1)
-        plt.imshow(temp_im.transpose(1,2,0))
-        plt.subplot(1,2,2)
-        plt.imshow(temp_lb)
-        plt.savefig('test.png')
-        plt.show()
-        print('ok')

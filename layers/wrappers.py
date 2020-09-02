@@ -146,7 +146,7 @@ class DeformableConv(torch.nn.Module):
     https://github.com/facebookresearch/maskrcnn-benchmark/blob/master/maskrcnn_benchmark/layers/misc.py
     """
     def __init__(self, in_channels, out_channels, with_modulated_dcn=True, kernel_size=3,
-                 stride=1, groups=1, dilation=1, deformable_groups=1, bias=False, padding=None):
+                 stride=1, groups=1, dilation=1, deformable_groups=1, bias=False):
         super(DeformableConv, self).__init__()
         if isinstance(kernel_size, (list, tuple)):
             assert isinstance(stride, (list, tuple))

@@ -16,7 +16,7 @@ class SearchArch(object):
         self._net_momentum = 0
         self._net_weight_decay = 0
         self._model = model
-        self._lr = 0.01
+        self._lr = 3e-4
         self._optimizer = torch.optim.Adam(self._model.arch_parameters(), lr=self._lr,
                                           betas=(0.5, 0.999), weight_decay=self._net_weight_decay)
 
@@ -60,7 +60,6 @@ class SearchArch(object):
             else:
                 v.grad.data.copy_(g.data)
 
-
     def _compute_unrolled_model(self, data, eta, net_optimizer):
         loss = self._model.model_forward(data)
 
@@ -89,7 +88,7 @@ class SearchArch(object):
         model_new.load_state_dict(model_dict)
         return model_new.cuda()
 
-    def _hessian_vector_product(self, vector, input, target, r=1e-2):
+    def _hessian_vector_product(self, vector, data, r=1e-2):
         R = r / _concat(vector).norm()
         for p,v in zip(self._model.parameters(), vector):
             p.data.add_(R, v)
@@ -120,29 +119,38 @@ if __name__ == '__main__':
     data_path = '/home/haida_sunxin/lqx/data/search/000000190236.pth'
     data = torch.load(data_path)
 
-    m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
+    m = SearchHead(C_in=256, C=128, num_classes=80, layers=1, criterion=None, multiplier=2, steps=4).cuda()
     optimizer = torch.optim.SGD(m.parameters(), lr=0.01)
+    print(m)
 
     a = SearchArch(m)
 
     features = {
-        'p3': data['p3'].cuda(),
-        'p4': data['p4'].cuda(),
-        'p5': data['p5'].cuda(),
-        'p6': data['p6'].cuda(),
-        'p7': data['p7'].cuda(),
+        'p3': data['p3'].unsqueeze(0).cuda(),
+        'p4': data['p4'].unsqueeze(0).cuda(),
+        'p5': data['p5'].unsqueeze(0).cuda(),
+        'p6': data['p6'].unsqueeze(0).cuda(),
+        'p7': data['p7'].unsqueeze(0).cuda(),
     }
 
-    targets = [data['labels'].cuda(), data['reg_targets'].cuda(), data['ctr_targets'].cuda()]
+    targets = {
+        'labels':data['labels'].unsqueeze(0).cuda(),
+        'reg_targets':data['reg_targets'].unsqueeze(0).cuda(),
+        'ctr_targets':data['ctr_targets'].unsqueeze(0).cuda()
+    }
+
+    data = {
+        'features': features,
+        'targets': targets
+    }
 
     import time
 
     st = time.time()
-    for i in range(80):
-        a.search_step(features, targets, features, targets, eta=0.01, network_optimizer=optimizer, unrolled=False)
+    for i in range(100):
+        a.search_step(data, data, eta=0.01, network_optimizer=optimizer, unrolled=True)
 
-        logits = m(features)
-        loss = m.fcos_loss(logits, targets)
+        loss = m.model_forward(data, flag=True)
         print(loss)
         loss = sum(loss.values())
 
@@ -154,6 +162,6 @@ if __name__ == '__main__':
     out_dir = '/home/haida_sunxin/lqx'
     m.visualization(name, out_dir)
 
-
+    print(m.genotype())
     print('using %f s' % (time.time() - st))
     print('done')

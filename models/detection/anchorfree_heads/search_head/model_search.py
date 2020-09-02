@@ -8,11 +8,13 @@ from layers import cat, ml_nms
 from utils.nn.focal_loss import sigmoid_focal_loss_jit
 from utils.nn.fcos_loss import IOULoss
 from models.detection.anchorfree_heads.fcos.fcos_tools import compute_locations
-from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, Genotype
+from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, Genotype, Genotype_w_box, parse_darts, parse_direct
 from models.detection.anchorfree_heads.search_head.operations import *
 from structures import Instances, Boxes
+from models.detection.anchorfree_heads.search_head.cells import *
 
 from models.detection.modules.postprocessing import detector_postprocess
+
 
 class Scale(nn.Module):
     def __init__(self, init_value=1.0):
@@ -21,55 +23,6 @@ class Scale(nn.Module):
 
     def forward(self, input):
         return input * self.scale
-
-
-class MixedOp(nn.Module):
-    def __init__(self, C):
-        super(MixedOp, self).__init__()
-        self._ops = nn.ModuleList()
-        for primitive in PRIMITIVES:
-            op = operation_sets[primitive](C)
-            self._ops.append(op)
-
-    def forward(self, x, weights):
-        return sum(w * op(x) for w, op in zip(weights, self._ops))
-
-
-class Cell(nn.Module):
-    def __init__(self, steps, multiplier, C_prev_prev, C_prev, C):
-        """
-        Args:
-            steps: (4 in DARTS)
-            multiplier: (multiplier=4, stem_multiplier=3 in DARTS)
-            C_prev_prev: s0 channel
-            C_prev: s1 channel
-            C: current channel
-        """
-        super(Cell, self).__init__()
-        self.preprocess0 = ReLUConvGN(C_prev_prev, C, kernel_size=3)
-        self.preprocess1 = ReLUConvGN(C_prev, C, kernel_size=3)
-        self._steps = steps
-        self._multiplier = multiplier
-
-        self._ops = nn.ModuleList()
-        # TODO check the _bns
-        # self._bns = nn.ModuleList()
-        for i in range(self._steps):
-            for j in range(2 + i):
-                op = MixedOp(C)
-                self._ops.append(op)
-
-    def forward(self, s0, s1, weights):
-        s0 = self.preprocess0(s0)
-        s1 = self.preprocess1(s1)
-
-        states = [s0, s1]
-        offset = 0
-        for i in range(self._steps):
-            s = sum(self._ops[offset + j](h, weights[offset + j]) for j,h in enumerate(states))
-            offset += len(states)
-            states.append(s)
-        return torch.cat(states[-self._multiplier:], dim=1)
 
 
 class SearchHead(nn.Module):
@@ -103,6 +56,7 @@ class SearchHead(nn.Module):
         self.pre_nms_thresh = 0.05
         self.pre_nms_topk = 1000
         self.post_nms_topk = 100
+        self.nms_thresh = 0.7
 
         self._reg_loss_func = IOULoss(iou_type="giou")
 
@@ -111,14 +65,14 @@ class SearchHead(nn.Module):
             nn.GroupNorm(C // 8, C)
         )
 
-        # TODO check the `C_curr` is necessary or not?
         C_curr = C
         C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
-        self.cells = nn.ModuleList()
-        for i in range(layers):
-            cell = Cell(steps, multiplier, C_prev_prev, C_prev, C)
-            self.cells += [cell]
-            C_prev_prev, C_prev = C_prev, multiplier * C_curr
+        self.cells, k = build_darts_cells(layers, C_prev_prev,C_prev, C_curr, multiplier=2, steps=4)
+
+        # C_curr = C
+        # self._depth = 4
+        # self.cells, k = build_direct_cells(layers, C_curr, C_in, steps=self._depth)
+        # self.cells, k = build_dense_cells(layers, C_curr, C_in, steps=self._depth)
 
         # Headers
         self.cls_logits = nn.Conv2d(
@@ -136,11 +90,10 @@ class SearchHead(nn.Module):
         )
         self.scales = nn.ModuleList([Scale(init_value=1.0) for _ in range(len(self._in_features))])
 
-        # alphas parameters
-        k = sum(1 for i in range(self._steps) for n in range(2+i))
         num_ops = len(PRIMITIVES)
 
         self.alphas_normal = torch.autograd.Variable(1e-3 * torch.randn(k, num_ops).cuda(), requires_grad=True)
+        self.betas_normal = torch.autograd.Variable(1e-3 * torch.randn(k).cuda(), requires_grad=True)
 
         # init loss
         for modules in [self.cls_logits,self.bbox_pred, self.ctrness]:
@@ -154,6 +107,20 @@ class SearchHead(nn.Module):
         bias_value = -math.log((1 - prior_prob) / prior_prob)
         torch.nn.init.constant_(self.cls_logits.bias, bias_value)
 
+    def _process_weights2(self):
+        weights2 = F.softmax(self.betas_normal[:2], dim=-1)
+        n = 3
+        start = 2
+
+        for i in range(self._steps - 1):
+            end = start + n
+            tw2 = F.softmax(self.betas_normal[start:end], dim=-1)
+            start = end
+            n += 1
+            weights2 = torch.cat([weights2, tw2], dim=0)
+        return weights2
+
+
     def forward(self, features):
         feats = [features[f] for f in self._in_features]
 
@@ -163,9 +130,13 @@ class SearchHead(nn.Module):
 
         for i, feat in enumerate(feats):
             s0 = s1 = self.stem(feat)
+            # s1 = self.stem(feat)
             for j, cell in enumerate(self.cells):
                 weights = F.softmax(self.alphas_normal, dim=-1)
-                s0, s1 = s1, cell(s0, s1, weights)
+                weights2 = self._process_weights2()
+                s0, s1 = s1, cell(s0, s1, weights, weights2)
+                # s1 = cell(s1, weights)
+
             cls_preds.append(self.cls_logits(s1))
             ctr_preds.append(self.ctrness(s1))
             box_pred = F.relu(self.scales[i](self.bbox_pred(s1)))
@@ -174,34 +145,21 @@ class SearchHead(nn.Module):
 
     def arch_parameters(self):
         arch_params = [
-            self.alphas_normal
+            self.alphas_normal,
+            self.betas_normal
         ]
         return arch_params
 
     def genotype(self):
-        def _parse(weights):
-            gene = []
-            n = 2
-            start = 0
-            for i in range(self._steps):
-                end = start + n
-                W = weights[start:end].copy()
-                # TODO check the none
-                edges = sorted(range(i + 2), key=lambda x:-max(W[x][k] for k in range(len(W[x]))))
-                edges = edges[:2]
-                for j in edges:
-                    k_best = None
-                    for k in range(len(W[j])):
-                        if k_best is None or W[j][k] > W[j][k_best]:
-                            k_best = k
-                    gene.append((PRIMITIVES[k_best], j))
-                start = end
-                n += 1
-            return gene
-        gene_normal = _parse(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy())
+        # Darts
+        # geno_normal = parse_darts(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy(), self._steps)
+
+        # Direct Cell
+        geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
+
         concat = range(2 + self._steps - self._multiplier, self._steps + 2)
-        genetype = Genotype(normal=gene_normal, normal_concat=concat)
-        return genetype
+        genotype = Genotype(normal=geno_normal, normal_concat=concat)
+        return genotype
 
     def fcos_loss(self, preds, targets):
         """
@@ -314,8 +272,9 @@ class SearchHead(nn.Module):
         }
 
         sampled_boxes = []
-
-        image_sizes = [(800, 1333),]
+        h, w = cls_preds[0].size()[2:]
+        h, w = h * 8, w * 8
+        image_sizes = [(h, w),]
 
         for i, per_bundle in enumerate(zip(*bundle.values())):
             # get per-level bundle
@@ -425,11 +384,8 @@ class SearchHead(nn.Module):
         for i in range(num_images):
             # multiclass nms
             result = boxlists[i]
-            if not self.training:
-                result = ml_nms(result, self.nms_thresh)
-                number_of_detections = len(result)
-            else:
-                number_of_detections = len(result)
+            result = ml_nms(result, self.nms_thresh)
+            number_of_detections = len(result)
 
             # Limit to max_per_image detections **over all classes**
             if number_of_detections > self.post_nms_topk > 0:
@@ -504,13 +460,25 @@ if __name__ == '__main__':
     import os
     os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
-    # m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
-    m = torch.load('/home/haida_sunxin/lqx/code/llseg/models/detection/anchorfree_heads/search_head/out/Epoch_49.pth', map_location='cpu')
-    m = m.cuda()
+    m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
+    # m = torch.load('/home/haida_sunxin/lqx/code/llseg/models/detection/anchorfree_heads/search_head/out/Epoch_49.pth', map_location='cpu')
+    # depth = 4
+    # m = DenseCell(C=128, C_out=256, depth=depth)
+    # m = m.cuda()
+    print(m)
+    print(m.alphas_normal.size())
+
+    # k = sum(i + 1 for i in range(depth))
+    #
+    x = torch.randn(1, 128, 64, 64).cuda()
+    # weights = torch.randn(k, 7).cuda()
+    # weights = torch.nn.functional.softmax(weights, dim=-1)
+    # y = m(x, weights)
+    # print(y.size())
     # m.load_state_dict(state_dict)
-    name = '/home/haida_sunxin/lqx/data/search/000000382125.pth'
-    out_dir = '/home/haida_sunxin/lqx'
-    m.visualization(name, out_dir)
+    # name = '/home/haida_sunxin/lqx/data/search/000000475678.pth'
+    # out_dir = '/home/haida_sunxin/lqx'
+    # m.visualization(name, out_dir)
 
 
 

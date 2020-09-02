@@ -10,7 +10,7 @@ from .fcos_tools import compute_locations, Scale
 from .fcos_output import FCOSOutputs
 from models.detection.anchorfree_heads import DET_ANCHORFREE_HEADS_REGISRY
 
-from models.detection.anchorfree_heads.search_head.model_head import SearchFCOSHead
+from models.detection.anchorfree_heads.search_head.model_head import SearchFCOSHead, SimFCOSHead
 
 INF = 100000000
 
@@ -39,8 +39,13 @@ class FCOSAnchorFreeHead(nn.Module):
         self.fpn_strides = cfg.MODEL.FCOS_HEADS.FPN_STRIDES
         self.yield_proposal = cfg.MODEL.FCOS_HEADS.YIELD_PROPOSAL
 
-        # self.fcos_head = FCOSHead(cfg, [input_shape[f] for f in self.in_features])
-        self.fcos_head = SearchFCOSHead()
+        #Debug
+        self.search_head = False
+
+        if self.search_head:
+            self.fcos_head = SearchFCOSHead()
+        else:
+            self.fcos_head = FCOSHead(cfg, [input_shape[f] for f in self.in_features])
 
         self.in_channels_to_top_module = self.fcos_head.in_channels_to_top_module
 
@@ -65,10 +70,12 @@ class FCOSAnchorFreeHead(nn.Module):
         """
         features = [in_features[f] for f in self.in_features]
         locations = self.compute_locations(features)
-        # logits_pred, reg_pred, ctrness_pred, top_feats, bbox_towers = self.fcos_head(
-        #     features, top_module, self.yield_proposal
-        # )
-        logits_pred, reg_pred, ctrness_pred, top_feats, bbox_towers = self.fcos_head(features)
+        if self.search_head:
+            logits_pred, reg_pred, ctrness_pred, top_feats, bbox_towers = self.fcos_head(features)
+        else:
+            logits_pred, reg_pred, ctrness_pred, top_feats, bbox_towers = self.fcos_head(
+                features, top_module, self.yield_proposal
+            )
 
         results = {}
         if self.yield_proposal:
@@ -121,8 +128,8 @@ class FCOSHead(nn.Module):
         self.fpn_strides = cfg.MODEL.FCOS_HEADS.FPN_STRIDES
         head_configs = {"cls": (cfg.MODEL.FCOS_HEADS.NUM_CLS_CONVS,
                                 cfg.MODEL.FCOS_HEADS.USE_DEFORMABLE),
-                        "bbox": (cfg.MODEL.FCOS_HEADS.NUM_BBOX_CONVS,
-                                 cfg.MODEL.FCOS_HEADS.USE_DEFORMABLE),
+                        # "bbox": (cfg.MODEL.FCOS_HEADS.NUM_BBOX_CONVS,
+                        #          cfg.MODEL.FCOS_HEADS.USE_DEFORMABLE),
                         "share": (cfg.MODEL.FCOS_HEADS.NUM_SHARED_CONVS,
                                   False)}
         norm = None if cfg.MODEL.FCOS_HEADS.NORM == "none" else cfg.MODEL.FCOS_HEADS.NORM
@@ -186,7 +193,7 @@ class FCOSHead(nn.Module):
             self.scales = None
 
         for modules in [
-            self.cls_tower, self.bbox_tower,
+            self.cls_tower,# self.bbox_tower,
             self.share_tower, self.cls_logits,
             self.bbox_pred, self.ctrness
         ]:
@@ -208,24 +215,30 @@ class FCOSHead(nn.Module):
         bbox_towers = []
         for l, feature in enumerate(x):
             feature = self.share_tower(feature)
-            # Debug TODO Validate the performance
             cls_tower = self.cls_tower(feature)
             # cls_tower = self.cls_shape_conv(cls_tower)
-            bbox_tower = self.bbox_tower(feature)
+            # bbox_tower = self.bbox_tower(feature)
             # bbox_tower = self.box_shape_conv(bbox_tower)
 
             if yield_bbox_towers:
-                bbox_towers.append(bbox_tower)
+                # bbox_towers.append(bbox_tower)
+                bbox_towers.append(cls_tower)
 
             logits.append(self.cls_logits(cls_tower))
-            ctrness.append(self.ctrness(bbox_tower))
-            reg = self.bbox_pred(bbox_tower)
+
+            # ctrness.append(self.ctrness(bbox_tower))
+            # reg = self.bbox_pred(bbox_tower)
+            ctrness.append(self.ctrness(cls_tower))
+            reg = self.bbox_pred(cls_tower)
+
             if self.scales is not None:
                 reg = self.scales[l](reg)
-            # Note that we use relu, as in the improved FCOS, instead of exp.
             bbox_reg.append(F.relu(reg))
+
             if top_module is not None:
-                top_feats.append(top_module(bbox_tower))
+                # top_feats.append(top_module(bbox_tower))
+                top_feats.append(top_module(cls_tower))
+
         return logits, bbox_reg, ctrness, top_feats, bbox_towers
 
 

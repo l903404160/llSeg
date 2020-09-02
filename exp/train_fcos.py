@@ -68,7 +68,7 @@ def main(args):
 if __name__ == "__main__":
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
     args = default_argument_setup().parse_args()
 

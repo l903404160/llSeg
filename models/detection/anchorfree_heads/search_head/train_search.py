@@ -56,7 +56,6 @@ def main(args):
     out_dir = './out'
     os.makedirs(out_dir, exist_ok=True)
 
-    train_loader, val_loader = get_train_val_dataset(root_dir, batch_size)
 
     # logging config
     if comm.is_main_process():
@@ -89,6 +88,7 @@ def main(args):
         lr = scheduler.get_lr()[0]
         if comm.is_main_process():
             logging.info("================================ \nEpoch : %d | Lr : %f" % (i, lr))
+        train_loader, val_loader = get_train_val_dataset(root_dir, batch_size)
 
         loss_dict = train(train_loader, val_loader, model, architect, optimizer, lr)
         genotype = model.module.genotype()
@@ -112,8 +112,15 @@ def train(train_loader, val_loader, model, architect, optimizer, lr):
     val_iter = iter(val_loader)
     train_iter = iter(train_loader)
 
-    print_period = 25
+    print_period = 10
     total_loss = 0
+
+    # val losses
+    loss_dict = {
+        'loss_fcos_cls': [],
+        'loss_fcos_loc': [],
+        'loss_fcos_ctr': []
+    }
 
     for i in tqdm.tqdm(range(len(train_loader)), disable=not comm.is_main_process()): #
         data = next(train_iter)
@@ -132,18 +139,25 @@ def train(train_loader, val_loader, model, architect, optimizer, lr):
             if (i+1) % print_period == 0:
                 logging.info("Training iter %d/%d | Avg Loss %f" % (i, len(train_loader), total_loss / print_period))
                 total_loss = 0
-
-    with torch.no_grad():
-        losses = model.module.model_forward(val_data, flag=True)
-    return losses
+                with torch.no_grad():
+                    losses = model.module.model_forward(val_data, flag=True)
+                    for k,v in loss_dict.items():
+                        loss_dict[k].append(float(losses[k].item()))
+    for k,v in loss_dict.items():
+        loss_dict[k] = np.mean(v)
+    return loss_dict
 
 
 if __name__ == '__main__':
+    # TODO Early Stopping
+    # TODO Eval the Eigenvalue
+    # TODO Separately search the box head and reg head
+
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
 
     args = default_argument_setup().parse_args()
-    args.num_gpus = 4
+    args.num_gpus = 2
 
     launch(
         main,
