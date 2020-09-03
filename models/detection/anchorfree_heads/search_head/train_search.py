@@ -72,7 +72,7 @@ def main(args):
     model_lr_min = 0.001
     momentum = 0.9
     weight_decay = 3e-4
-    epochs = 50
+    epochs = 30
 
     model = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
     optimizer = torch.optim.SGD(model.parameters(), lr=model_lr, momentum=momentum, weight_decay=weight_decay)
@@ -90,7 +90,7 @@ def main(args):
             logging.info("================================ \nEpoch : %d | Lr : %f" % (i, lr))
         train_loader, val_loader = get_train_val_dataset(root_dir, batch_size)
 
-        loss_dict = train(train_loader, val_loader, model, architect, optimizer, lr)
+        loss_dict = train(train_loader, val_loader, model, architect, optimizer, lr, i)
         genotype = model.module.genotype()
 
         if comm.is_main_process():
@@ -107,7 +107,7 @@ def main(args):
             torch.save(model.module, os.path.join(out_dir, "Epoch_" + str(i) + ".pth"))
 
 
-def train(train_loader, val_loader, model, architect, optimizer, lr):
+def train(train_loader, val_loader, model, architect, optimizer, lr, epochs):
 
     val_iter = iter(val_loader)
     train_iter = iter(train_loader)
@@ -125,8 +125,8 @@ def train(train_loader, val_loader, model, architect, optimizer, lr):
     for i in tqdm.tqdm(range(len(train_loader)), disable=not comm.is_main_process()): #
         data = next(train_iter)
         val_data = next(val_iter)
-
-        architect.search_step(data, val_data, lr, optimizer, unrolled=False)
+        if epochs > 10:
+            architect.search_step(data, val_data, lr, optimizer, unrolled=True)
 
         loss = model.module.model_forward(data)
         optimizer.zero_grad()
@@ -154,10 +154,10 @@ if __name__ == '__main__':
     # TODO Separately search the box head and reg head
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '2,3'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
 
     args = default_argument_setup().parse_args()
-    args.num_gpus = 2
+    args.num_gpus = 4
 
     launch(
         main,

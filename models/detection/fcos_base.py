@@ -6,7 +6,6 @@ from models.detection.anchorfree_heads import det_onestage_anchorfree_builder
 from structures import ImageList
 from models.detection.modules.postprocessing import detector_postprocess
 
-# Debug
 
 class GeneralizedOneStageAnchorFreeDetector(nn.Module):
     def __init__(self, cfg):
@@ -38,7 +37,7 @@ class GeneralizedOneStageAnchorFreeDetector(nn.Module):
         else:
             gt_instances = None
 
-        proposals, proposal_losses = self.head(images, features, gt_instances, name=batched_inputs[0]['file_name'])
+        proposals, proposal_losses = self.head(images, features, gt_instances)
 
         if self.training:
             # two_losses = self.two_head(features, proposals['proposals'], gt_instances)
@@ -57,8 +56,6 @@ class GeneralizedOneStageAnchorFreeDetector(nn.Module):
             return processed_results
 
     def preprocess_image(self, batched_inputs):
-        # Normalization
-        # compute heatmap, tag, regr
         images = [x["image"].to(self.device) for x in batched_inputs]
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, self.backbone.size_divisibility)

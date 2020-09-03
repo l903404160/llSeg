@@ -81,7 +81,7 @@ if __name__ == "__main__":
 
     # Weights
     args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/R-50.pkl"]
-    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_darts_layer2/model_0069999.pth"]
+    # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_new/model_0089999.pth"]
 
     # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
     args.eval_only = False

@@ -147,8 +147,9 @@ if __name__ == '__main__':
     import time
 
     st = time.time()
-    for i in range(100):
-        a.search_step(data, data, eta=0.01, network_optimizer=optimizer, unrolled=True)
+    for i in range(150):
+        if i > 50:
+            a.search_step(data, data, eta=0.01, network_optimizer=optimizer, unrolled=True)
 
         loss = m.model_forward(data, flag=True)
         print(loss)

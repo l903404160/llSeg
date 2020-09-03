@@ -71,7 +71,7 @@ class SearchHead(nn.Module):
 
         # C_curr = C
         # self._depth = 4
-        # self.cells, k = build_direct_cells(layers, C_curr, C_in, steps=self._depth)
+        # self.cells, k = build_direct_cells(layers, C_curr, C_in, steps=self._depth, pc=True)
         # self.cells, k = build_dense_cells(layers, C_curr, C_in, steps=self._depth)
 
         # Headers
@@ -129,13 +129,13 @@ class SearchHead(nn.Module):
         ctr_preds = []
 
         for i, feat in enumerate(feats):
-            s0 = s1 = self.stem(feat)
-            # s1 = self.stem(feat)
+            # s0 = s1 = self.stem(feat)
+            s1 = self.stem(feat)
             for j, cell in enumerate(self.cells):
                 weights = F.softmax(self.alphas_normal, dim=-1)
                 weights2 = self._process_weights2()
-                s0, s1 = s1, cell(s0, s1, weights, weights2)
-                # s1 = cell(s1, weights)
+                # s0, s1 = s1, cell(s0, s1, weights, weights2)
+                s1 = cell(s1, weights, weights2)
 
             cls_preds.append(self.cls_logits(s1))
             ctr_preds.append(self.ctrness(s1))
@@ -152,10 +152,10 @@ class SearchHead(nn.Module):
 
     def genotype(self):
         # Darts
-        # geno_normal = parse_darts(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy(), self._steps)
+        geno_normal = parse_darts(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy(), self._steps)
 
         # Direct Cell
-        geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
+        # geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
 
         concat = range(2 + self._steps - self._multiplier, self._steps + 2)
         genotype = Genotype(normal=geno_normal, normal_concat=concat)

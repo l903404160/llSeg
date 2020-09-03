@@ -169,11 +169,14 @@ class DenseCell(nn.Module):
             nn.ReLU()
         )
 
-    def forward(self, s0, weights):
+    def forward(self, s0, weights, weights2=None):
         states = [s0]
         offset = 0
         for i in range(self._depth):
-            s = sum(self._ops[offset + j](h, weights[offset + j]) for j,h in enumerate(states))
+            if weights2 is not None:
+                s = sum(weights2[offset + j] * self._ops[offset + j](h, weights[offset + j]) for j, h in enumerate(states))
+            else:
+                s = sum(self._ops[offset + j](h, weights[offset + j]) for j,h in enumerate(states))
             offset += len(states)
             states.append(s)
         out = self.align_conv(states[-1])
