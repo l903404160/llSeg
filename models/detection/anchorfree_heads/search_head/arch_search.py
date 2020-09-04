@@ -119,7 +119,7 @@ if __name__ == '__main__':
     data_path = '/home/haida_sunxin/lqx/data/search/000000190236.pth'
     data = torch.load(data_path)
 
-    m = SearchHead(C_in=256, C=128, num_classes=80, layers=1, criterion=None, multiplier=2, steps=4).cuda()
+    m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2, steps=3).cuda()
     optimizer = torch.optim.SGD(m.parameters(), lr=0.01)
     print(m)
 

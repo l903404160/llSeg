@@ -12,8 +12,8 @@ from models.detection.anchorfree_heads.search_head.operations import ReLUConvGN,
     Generate Head model according to the Genotype
 """
 
-genotype = Genotype(normal=[('dil_4_conv_3x3', 0), ('dil_4_conv_3x3', 1), ('sep_conv_3x3', 2),
-                            ('skip_connect', 3), ('dil_4_conv_3x3', 4), ('dil_4_conv_3x3', 5)], normal_concat=range(4, 6))
+genotype = Genotype(normal=[('dil_4_conv_3x3', 0), ('sep_conv_5x5', 1), ('dil_4_conv_3x3', 2), ('dil_4_conv_3x3', 0),
+                            ('sep_conv_3x3', 1), ('sep_conv_5x5', 3), ('sep_conv_5x5', 2), ('sep_conv_3x3', 1)], normal_concat=range(4, 6))
 
 
 class Cell(nn.Module):
@@ -92,7 +92,7 @@ class SearchFCOSHead(nn.Module):
         C_in = 256
         C = 128
         C_curr = 128
-        layers = 1
+        layers = 2
         self._in_features = ['p3','p4','p5','p6','p7']
         self.in_channels_to_top_module = C_in
 
@@ -103,22 +103,23 @@ class SearchFCOSHead(nn.Module):
         )
 
         # Cells
-        self.cls_cells = nn.ModuleList()
-        self.reg_cells = nn.ModuleList()
+        # self.cls_cells = nn.ModuleList()
+        # self.reg_cells = nn.ModuleList()
+        self.cells = nn.ModuleList()
         # DARTS cell
-        # C_prev_prev, C_prev = C, C
-        # for i in range(layers):
-        #     cell = Cell(genotype=genotype, C_prev_prev=C_prev_prev, C_prev=C_prev, C=C)
-        #     self.cells += [cell]
-        #     C_prev_prev, C_prev = C_prev, multiplier * C
+        C_prev_prev, C_prev = C, C
+        for i in range(layers):
+            cell = Cell(genotype=genotype, C_prev_prev=C_prev_prev, C_prev=C_prev, C=C)
+            self.cells += [cell]
+            C_prev_prev, C_prev = C_prev, multiplier * C
 
         # direct
-        for i in range(layers):
-            cell = DirectCell(genotype, C, multiplier * C)
-            self.reg_cells += [cell]
-
-            cell = DirectCell(genotype, C, multiplier * C)
-            self.cls_cells += [cell]
+        # for i in range(layers):
+        #     cell = DirectCell(genotype, C, multiplier * C)
+        #     self.reg_cells += [cell]
+        #
+        #     cell = DirectCell(genotype, C, multiplier * C)
+        #     self.cls_cells += [cell]
 
         # Headers
         self.cls_logits = nn.Conv2d(
@@ -156,25 +157,24 @@ class SearchFCOSHead(nn.Module):
         bbox_towers = []
 
         for i, feat in enumerate(features):
-            # s0 = s1 = self.stem(feat)
-            # for j, cell in enumerate(self.cells):
-            #     s0, s1 = s1, cell(s0, s1)
-            # cls_preds.append(self.cls_logits(s1))
-            # ctr_preds.append(self.ctrness(s1))
-            s0 = self.stem(feat)
+            s0 = s1 = self.stem(feat)
+            for j, cell in enumerate(self.cells):
+                s0, s1 = s1, cell(s0, s1)
+            cls_preds.append(self.cls_logits(s1))
+            ctr_preds.append(self.ctrness(s1))
+            # s0 = self.stem(feat)
+            # for j, cell in enumerate(self.reg_cells):
+            #     if j == 0:
+            #         sbox = cell(s0)
+            #         scls = self.cls_cells[j](s0)
+            #     else:
+            #         sbox = cell(sbox)
+            #         scls = self.cls_cells[j](scls)
 
-            for j, cell in enumerate(self.reg_cells):
-                if j == 0:
-                    sbox = cell(s0)
-                    scls = self.cls_cells[j](s0)
-                else:
-                    sbox = cell(sbox)
-                    scls = self.cls_cells[j](scls)
+            # cls_preds.append(self.cls_logits(scls))
+            # ctr_preds.append(self.ctrness(scls))
 
-            cls_preds.append(self.cls_logits(scls))
-            ctr_preds.append(self.ctrness(scls))
-
-            box_pred = F.relu(self.scales[i](self.bbox_pred(sbox)))
+            box_pred = F.relu(self.scales[i](self.bbox_pred(s1)))
             box_preds.append(box_pred)
         return cls_preds, box_preds, ctr_preds, top_feat, bbox_towers
 
@@ -264,10 +264,10 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '7'
 
     # m = Cell(genotype=DARTS_FCOS_HEAD, C_in=128, C=128).cuda()
-    # m = SearchFCOSHead().cuda()
-    # print(m)
-    m = SimFCOSHead().cuda()
+    m = SearchFCOSHead().cuda()
     print(m)
+    # m = SimFCOSHead().cuda()
+    # print(m)
 
     # channels = 256
     # m = nn.Sequential(
@@ -298,6 +298,7 @@ if __name__ == '__main__':
         'p6': torch.randn(1, 256, 13, 16).cuda(),
         'p7': torch.randn(1, 256, 7, 8).cuda(),
     }
+    features = [features[k] for k in features.keys()]
 
     st = time.time()
     for i in range(100):

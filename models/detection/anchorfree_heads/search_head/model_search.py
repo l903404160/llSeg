@@ -56,7 +56,7 @@ class SearchHead(nn.Module):
         self.pre_nms_thresh = 0.05
         self.pre_nms_topk = 1000
         self.post_nms_topk = 100
-        self.nms_thresh = 0.7
+        self.nms_thresh = 0.6
 
         self._reg_loss_func = IOULoss(iou_type="giou")
 
@@ -67,7 +67,7 @@ class SearchHead(nn.Module):
 
         C_curr = C
         C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
-        self.cells, k = build_darts_cells(layers, C_prev_prev,C_prev, C_curr, multiplier=2, steps=4)
+        self.cells, k = build_darts_cells(layers, C_prev_prev,C_prev, C_curr, multiplier=2, steps=self._steps, pc=True)
 
         # C_curr = C
         # self._depth = 4
@@ -129,13 +129,13 @@ class SearchHead(nn.Module):
         ctr_preds = []
 
         for i, feat in enumerate(feats):
-            # s0 = s1 = self.stem(feat)
-            s1 = self.stem(feat)
+            s0 = s1 = self.stem(feat)
+            # s1 = self.stem(feat)
             for j, cell in enumerate(self.cells):
                 weights = F.softmax(self.alphas_normal, dim=-1)
                 weights2 = self._process_weights2()
-                # s0, s1 = s1, cell(s0, s1, weights, weights2)
-                s1 = cell(s1, weights, weights2)
+                s0, s1 = s1, cell(s0, s1, weights, weights2)
+                # s1 = cell(s1, weights, weights2)
 
             cls_preds.append(self.cls_logits(s1))
             ctr_preds.append(self.ctrness(s1))

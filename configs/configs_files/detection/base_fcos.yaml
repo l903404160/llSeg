@@ -1,4 +1,4 @@
-OUTPUT_DIR: "./fcos_r50_val_2"
+OUTPUT_DIR: "./fcos_r50_clsbox"
 MODEL:
   BUILDER: "base_onesstageanchorfree_builder"
   BACKBONE:

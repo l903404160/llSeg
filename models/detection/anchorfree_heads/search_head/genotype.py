@@ -18,8 +18,11 @@ PRIMITIVES = [
     # 'side_conv_3x1'
 ]
 
-DARTS_FCOS_HEAD = Genotype(normal=[('dil_4_conv_3x3', 0), ('skip_connect', 1), ('dil_4_conv_3x3', 0), ('conv_3x3', 2),
-                                   ('sep_conv_3x3', 2), ('sep_conv_3x3', 1), ('sep_conv_3x3', 2), ('sep_conv_3x3', 3)], normal_concat=range(4, 6))
+DARTS_FCOS_HEAD = Genotype(normal=[('dil_4_conv_3x3', 0), ('sep_conv_5x5', 1), ('dil_4_conv_3x3', 2), ('dil_4_conv_3x3', 0),
+                            ('sep_conv_3x3', 1), ('sep_conv_5x5', 3), ('sep_conv_5x5', 2), ('sep_conv_3x3', 1)], normal_concat=range(4, 6))
+
+    # Genotype(normal=[('dil_4_conv_3x3', 0), ('skip_connect', 1), ('dil_4_conv_3x3', 0), ('conv_3x3', 2),
+    #                                ('sep_conv_3x3', 2), ('sep_conv_3x3', 1), ('sep_conv_3x3', 2), ('sep_conv_3x3', 3)], normal_concat=range(4, 6))
 
 
     # Genotype(normal=[('dil_4_conv_3x3', 0), ('sep_conv_3x3', 1), ('conv_3x3', 2),('sep_conv_3x3', 0),
