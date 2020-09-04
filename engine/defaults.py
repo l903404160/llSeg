@@ -457,9 +457,9 @@ class DefaultTrainer(SimpleTrainer):
                     results[dataset_name] = {}
                     continue
             # Segmentation
-            # results_i = inference_on_dataset(model, data_loader, evaluator)
+            results_i = inference_on_dataset(model, data_loader, evaluator)
             # Detection
-            results_i = inference_on_detection_dataset(model, data_loader, evaluator)
+            # results_i = inference_on_detection_dataset(model, data_loader, evaluator)
             results[dataset_name] = results_i
             if comm.is_main_process():
                 assert isinstance(
