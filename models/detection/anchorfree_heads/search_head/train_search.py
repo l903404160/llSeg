@@ -5,7 +5,6 @@ import tqdm
 import torch
 import logging
 import torch.nn as nn
-import torch.nn.functional as F
 from models.detection.anchorfree_heads.search_head.search_datasets import COCOValSearch, get_dataloader
 
 import numpy as np
@@ -40,7 +39,6 @@ def get_train_val_dataset(root_dir, batch_size):
     val_loader = get_dataloader(val_dataset, batch_size)
     return train_loader, val_loader
 
-
 def main(args):
     # set random seed
     seed = 100
@@ -53,9 +51,8 @@ def main(args):
     # dataset part
     root_dir = '/home/haida_sunxin/lqx/data/search'
     batch_size = 1
-    out_dir = './out'
+    out_dir = './out_noskip'
     os.makedirs(out_dir, exist_ok=True)
-
 
     # logging config
     if comm.is_main_process():
@@ -72,9 +69,10 @@ def main(args):
     model_lr_min = 0.001
     momentum = 0.9
     weight_decay = 3e-4
-    epochs = 30
+    epochs = 15
 
-    model = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
+    model = SearchHead(C_in=256, C_mid=256, C_out=256, num_classes=80, layers=1, multiplier=2).cuda()
+
     optimizer = torch.optim.SGD(model.parameters(), lr=model_lr, momentum=momentum, weight_decay=weight_decay)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=model_lr_min)
     model = DistributedDataParallel(model, device_ids=[comm.get_local_rank()])
@@ -112,7 +110,7 @@ def train(train_loader, val_loader, model, architect, optimizer, lr, epochs):
     val_iter = iter(val_loader)
     train_iter = iter(train_loader)
 
-    print_period = 10
+    print_period = 25
     total_loss = 0
 
     # val losses
@@ -125,7 +123,7 @@ def train(train_loader, val_loader, model, architect, optimizer, lr, epochs):
     for i in tqdm.tqdm(range(len(train_loader)), disable=not comm.is_main_process()): #
         data = next(train_iter)
         val_data = next(val_iter)
-        if epochs > 10:
+        if epochs > 6:
             architect.search_step(data, val_data, lr, optimizer, unrolled=True)
 
         loss = model.module.model_forward(data)

@@ -8,7 +8,7 @@ from layers import cat, ml_nms
 from utils.nn.focal_loss import sigmoid_focal_loss_jit
 from utils.nn.fcos_loss import IOULoss
 from models.detection.anchorfree_heads.fcos.fcos_tools import compute_locations
-from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, Genotype, Genotype_w_box, parse_darts, parse_direct
+from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, Genotype, Genotype_fcos, parse_darts, parse_direct
 from models.detection.anchorfree_heads.search_head.operations import *
 from structures import Instances, Boxes
 from models.detection.anchorfree_heads.search_head.cells import *
@@ -26,7 +26,7 @@ class Scale(nn.Module):
 
 
 class SearchHead(nn.Module):
-    def __init__(self, C_in, C, num_classes, layers, criterion, steps=4, multiplier=4):
+    def __init__(self, C_in, C_mid, C_out, num_classes, layers, multiplier=4):
         """
         Args:
             C_in: in_channels
@@ -34,17 +34,15 @@ class SearchHead(nn.Module):
             num_classes:  number of classes
             layers:  number of layers
             criterion:  Loss criterion
-            steps:  cell steps
             multiplier:  Cell multiplier. Because the output of a Cell is concated.
              Thus the multiplier is needed to specify the output channel of a feature
         """
         super(SearchHead, self).__init__()
         self._C_in = C_in
-        self._C = C
+        self._C_mid = C_mid
+        self._C_out = C_out
         self._num_classes = num_classes
         self._layers = layers
-        self._criterion = criterion
-        self._steps = steps
         self._multiplier = multiplier
         self._in_features = ['p3','p4','p5','p6','p7']
         self._fpn_strides = [8, 16, 32, 64, 128]
@@ -60,40 +58,32 @@ class SearchHead(nn.Module):
 
         self._reg_loss_func = IOULoss(iou_type="giou")
 
-        self.stem = nn.Sequential(
-            nn.Conv2d(C_in, C, kernel_size=3, stride=1, padding=1, bias=False),
-            nn.GroupNorm(C // 8, C)
-        )
-
-        C_curr = C
-        C_prev_prev, C_prev, C_curr = C_curr, C_curr, C
-        self.cells, k = build_darts_cells(layers, C_prev_prev,C_prev, C_curr, multiplier=2, steps=self._steps, pc=True)
-
-        # C_curr = C
-        # self._depth = 4
-        # self.cells, k = build_direct_cells(layers, C_curr, C_in, steps=self._depth, pc=True)
-        # self.cells, k = build_dense_cells(layers, C_curr, C_in, steps=self._depth)
+        self._depth = 4
+        self._box_depth = 4
+        self.cls_cells, cls_k = build_direct_cells(layers, self._C_in, self._C_mid, self._C_out, stride=1, depth=self._depth, pc=True, search_part='cls')
+        self.box_cells, box_k = build_direct_cells(layers, self._C_in, self._C_mid, self._C_out, stride=1, depth=self._box_depth, pc=True, search_part='box')
 
         # Headers
         self.cls_logits = nn.Conv2d(
-            multiplier * C_curr, self._num_classes,
+            self._C_out, self._num_classes,
             kernel_size=3, stride=1,
             padding=1
         )
         self.bbox_pred = nn.Conv2d(
-            multiplier * C_curr, 4, kernel_size=3,
+            self._C_out, 4, kernel_size=3,
             stride=1, padding=1
         )
         self.ctrness = nn.Conv2d(
-            multiplier * C_curr, 1, kernel_size=3,
+            self._C_out, 1, kernel_size=3,
             stride=1, padding=1
         )
         self.scales = nn.ModuleList([Scale(init_value=1.0) for _ in range(len(self._in_features))])
 
-        num_ops = len(PRIMITIVES)
+        num_cls_ops = len(PRIMITIVES)
+        num_box_ops = len(PRIMITIVES_box)
 
-        self.alphas_normal = torch.autograd.Variable(1e-3 * torch.randn(k, num_ops).cuda(), requires_grad=True)
-        self.betas_normal = torch.autograd.Variable(1e-3 * torch.randn(k).cuda(), requires_grad=True)
+        self.alphas_normal = torch.autograd.Variable(1e-3 * torch.randn(cls_k, num_cls_ops).cuda(), requires_grad=True)
+        self.alphas_normal_2 = torch.autograd.Variable(1e-3 * torch.randn(box_k, num_box_ops).cuda(), requires_grad=True)
 
         # init loss
         for modules in [self.cls_logits,self.bbox_pred, self.ctrness]:
@@ -120,7 +110,6 @@ class SearchHead(nn.Module):
             weights2 = torch.cat([weights2, tw2], dim=0)
         return weights2
 
-
     def forward(self, features):
         feats = [features[f] for f in self._in_features]
 
@@ -129,36 +118,41 @@ class SearchHead(nn.Module):
         ctr_preds = []
 
         for i, feat in enumerate(feats):
-            s0 = s1 = self.stem(feat)
-            # s1 = self.stem(feat)
-            for j, cell in enumerate(self.cells):
-                weights = F.softmax(self.alphas_normal, dim=-1)
-                weights2 = self._process_weights2()
-                s0, s1 = s1, cell(s0, s1, weights, weights2)
-                # s1 = cell(s1, weights, weights2)
+            for j, cell in enumerate(self.cls_cells):
+                if j == 0:
+                    weights = F.softmax(self.alphas_normal, dim=-1)
+                    weights_2 = F.softmax(self.alphas_normal_2, dim=-1)
+                    s1 = cell(feat, weights)
+                    sbox = self.box_cells[j](feat, weights_2)
+                else:
+                    weights = F.softmax(self.alphas_normal, dim=-1)
+                    weights_2 = F.softmax(self.alphas_normal_2, dim=-1)
+                    s1 = cell(s1, weights)
+                    sbox = self.box_cells[j](sbox, weights_2)
 
             cls_preds.append(self.cls_logits(s1))
-            ctr_preds.append(self.ctrness(s1))
-            box_pred = F.relu(self.scales[i](self.bbox_pred(s1)))
+            ctr_preds.append(self.ctrness(sbox))
+            box_pred = F.relu(self.scales[i](self.bbox_pred(sbox)))
             box_preds.append(box_pred)
         return cls_preds, box_preds, ctr_preds
 
     def arch_parameters(self):
         arch_params = [
             self.alphas_normal,
-            self.betas_normal
+            self.alphas_normal_2,
+            # self.betas_normal
         ]
         return arch_params
 
     def genotype(self):
         # Darts
-        geno_normal = parse_darts(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy(), self._steps)
+        # geno_normal = parse_darts(F.softmax(self.alphas_normal, dim=-1).detach().cpu().numpy(), self._steps)
 
         # Direct Cell
-        # geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
+        geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
+        geno_normal_2 = parse_direct(F.softmax(self.alphas_normal_2, dim=-1).detach().cpu(), search_part='box')
 
-        concat = range(2 + self._steps - self._multiplier, self._steps + 2)
-        genotype = Genotype(normal=geno_normal, normal_concat=concat)
+        genotype = Genotype_fcos(normal_cls=geno_normal, normal_box=geno_normal_2)
         return genotype
 
     def fcos_loss(self, preds, targets):
@@ -256,7 +250,7 @@ class SearchHead(nn.Module):
         return sum(losses.values())
 
     def new(self):
-        model_new = SearchHead(self._C_in, self._C, self._num_classes, self._layers, self._criterion, steps=self._steps, multiplier=self._multiplier).cuda()
+        model_new = SearchHead(self._C_in, self._C_mid, self._C_out, self._num_classes, self._layers, multiplier=self._multiplier).cuda()
         for x,y in zip(model_new.arch_parameters(), self.arch_parameters()):
             x.data.copy_(y.data)
         return model_new
@@ -454,31 +448,3 @@ class SearchHead(nn.Module):
 
         concat = np.concatenate((vis_pred, vis_gt), axis=1)
         cv2.imwrite(os.path.join(output_dir, data_name[:-4] + '.jpg'), concat[:, :, ::-1])
-
-
-if __name__ == '__main__':
-    import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '7'
-
-    m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2).cuda()
-    # m = torch.load('/home/haida_sunxin/lqx/code/llseg/models/detection/anchorfree_heads/search_head/out/Epoch_49.pth', map_location='cpu')
-    # depth = 4
-    # m = DenseCell(C=128, C_out=256, depth=depth)
-    # m = m.cuda()
-    print(m)
-    print(m.alphas_normal.size())
-
-    # k = sum(i + 1 for i in range(depth))
-    #
-    x = torch.randn(1, 128, 64, 64).cuda()
-    # weights = torch.randn(k, 7).cuda()
-    # weights = torch.nn.functional.softmax(weights, dim=-1)
-    # y = m(x, weights)
-    # print(y.size())
-    # m.load_state_dict(state_dict)
-    # name = '/home/haida_sunxin/lqx/data/search/000000475678.pth'
-    # out_dir = '/home/haida_sunxin/lqx'
-    # m.visualization(name, out_dir)
-
-
-

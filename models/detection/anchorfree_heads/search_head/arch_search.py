@@ -14,9 +14,9 @@ def _concat(xs):
 class SearchArch(object):
     def __init__(self, model):
         self._net_momentum = 0
-        self._net_weight_decay = 0
+        self._net_weight_decay = 1e-3
         self._model = model
-        self._lr = 3e-4
+        self._lr = 6e-4
         self._optimizer = torch.optim.Adam(self._model.arch_parameters(), lr=self._lr,
                                           betas=(0.5, 0.999), weight_decay=self._net_weight_decay)
 
@@ -92,8 +92,6 @@ class SearchArch(object):
         R = r / _concat(vector).norm()
         for p,v in zip(self._model.parameters(), vector):
             p.data.add_(R, v)
-        # TODO need revisit
-        # TODO according the data processing interface
         loss = self._model.model_forward(data)
 
         grads_p = torch.autograd.grad(loss, self._model.arch_parameters())
@@ -119,8 +117,8 @@ if __name__ == '__main__':
     data_path = '/home/haida_sunxin/lqx/data/search/000000190236.pth'
     data = torch.load(data_path)
 
-    m = SearchHead(C_in=256, C=128, num_classes=80, layers=2, criterion=None, multiplier=2, steps=3).cuda()
-    optimizer = torch.optim.SGD(m.parameters(), lr=0.01)
+    m = SearchHead(C_in=256, C_mid=256, C_out=256, num_classes=80, layers=1, multiplier=2).cuda()
+    optimizer = torch.optim.SGD(m.parameters(), lr=0.01, weight_decay=3e-4, momentum=0.9)
     print(m)
 
     a = SearchArch(m)
@@ -147,9 +145,13 @@ if __name__ == '__main__':
     import time
 
     st = time.time()
-    for i in range(150):
-        if i > 50:
+    for i in range(50):
+        if i > 20:
             a.search_step(data, data, eta=0.01, network_optimizer=optimizer, unrolled=True)
+            if (i+1) % 10 == 0:
+                print(torch.nn.functional.softmax(m.arch_parameters()[0], dim=-1))
+                print(torch.nn.functional.softmax(m.arch_parameters()[1], dim=-1))
+
 
         loss = m.model_forward(data, flag=True)
         print(loss)
@@ -163,6 +165,7 @@ if __name__ == '__main__':
     out_dir = '/home/haida_sunxin/lqx'
     m.visualization(name, out_dir)
 
+    print(m.arch_parameters())
     print(m.genotype())
     print('using %f s' % (time.time() - st))
     print('done')

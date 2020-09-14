@@ -68,7 +68,7 @@ def main(args):
 if __name__ == "__main__":
 
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
 
     args = default_argument_setup().parse_args()
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
 
     # args.opts = ["MODEL.WEIGHTS", "/home/haida_sunxin/lqx/model_weight/X-101-32x8d.pkl"]
     args.eval_only = False
-    args.resume = False
+    args.resume = True
 
     print("Command Line Args:", args)
     launch(
