@@ -1,10 +1,10 @@
 MODEL:
   BUILDER: "segmentation_builder"
-  WEIGHTS: "/root/models/baseline_res_101.pth"
+  WEIGHTS: "/home/haida_sunxin/lqx/code/llseg/ext/models/baseline_res_101.pth"
   DEVICE: "cuda"
   NUM_CLASSES: 19
   N_LAYERS: 101
-  STRIDE: 16
+  STRIDE: 8
   BN_LAYER: "SyncBN"
   BN_MOM: 0.1
   IGNORE_LABEL: 255
@@ -31,7 +31,7 @@ SOLVER:
   BASE_LR: 0.01
   LR_SCHEDULER_NAME: "WarmupPolyLR"
   POWER: 0.9
-  IMS_PER_BATCH: 2
+  IMS_PER_BATCH: 8
   MAX_ITER: 60000
 
 TEST:

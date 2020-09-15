@@ -16,8 +16,6 @@ INF = 100000000
 
 
 
-
-
 class ModuleListDial(nn.ModuleList):
     def __init__(self, modules=None):
         super(ModuleListDial, self).__init__(modules)

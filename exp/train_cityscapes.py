@@ -1,5 +1,6 @@
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '6,7'
+import sys
+sys.path.append('/home/haida_sunxin/lqx/code/llseg')
 from configs import get_sem_seg_config
 
 import engine.hooks as hooks
@@ -56,9 +57,10 @@ def main(args):
 
 
 if __name__ == '__main__':
-
+    import os
+    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
     args = default_argument_setup().parse_args()
-    args.num_gpus = 2
+    args.num_gpus = 4
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/baseline.yaml"
 
     launch(

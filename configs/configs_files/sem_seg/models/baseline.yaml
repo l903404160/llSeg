@@ -1,8 +1,7 @@
 __BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/seg_base.yaml"
 
 MODEL:
-  STRIDE: 16
-  WEIGHTS: "/home/haida_sunxin/lqx/code/vot2/ext/models/baseline_res_101.pth"
+  STRIDE: 8
 SOLVER:
   BASE_LR: 0.01
   LR_SCHEDULER_NAME: "WarmupPolyLR"
