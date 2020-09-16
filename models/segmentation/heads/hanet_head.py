@@ -21,4 +21,9 @@ class HANetHead(nn.Module):
 # @Jingfei Sun
 @SEG_HEAD_REGISTRY.register()
 def hanet_builder(cfg):
-    pass
+    from layers.batch_norm import get_norm
+    norm_layer = get_norm(cfg.MODEL.BN_LAYER)
+    if norm_layer is None:
+        norm_layer = nn.BatchNorm2d
+    return HANetHead(cfg, norm_layer)
+
