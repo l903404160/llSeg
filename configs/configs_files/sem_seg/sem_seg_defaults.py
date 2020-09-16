@@ -79,6 +79,7 @@ _C.MODEL.HANET = CN()
 _C.MODEL.HANET.ASPP_RATES = [6, 12, 18]
 _C.MODEL.HANET.IN_DIM = 2048 #ResNet final channel
 _C.MODEL.HANET.REDUCTION_DIM = 256
+_C.MODEL.HANET.HANET_CONV_FLAGS = [1,1,1,1,0]
 
 # Need implemented by model
 
