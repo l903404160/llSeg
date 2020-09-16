@@ -4,9 +4,19 @@ import torch.nn.functional as F
 
 operation_sets = {}
 operation_sets['skip'] = lambda C_in, C_out, stride: Identity(dim_in=C_in, dim_out=C_out, stride=stride)
-operation_sets['conv_k1'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=1, stride=stride, bias=False)
+operation_sets['conv_k1'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=1, stride=stride)
+operation_sets['conv_k3'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=3, stride=stride)
+operation_sets['conv_k3_d2'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=3, stride=stride, dilation=2)
+operation_sets['conv_k3_d4'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=3, stride=stride, dilation=4)
+operation_sets['conv_k5'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=5, stride=stride)
+operation_sets['conv_k5_d2'] = lambda C_in, C_out, stride: ConvGnReLU(dim_in=C_in, dim_out=C_out, kernel_size=5, stride=stride, dilation=2)
+
+
 operation_sets['sep_k3'] = lambda C_in, C_out, stride: SepConv(dim_in=C_in, dim_out=C_out, kernel_size=3, stride=stride)
+operation_sets['sep_k3_d2'] = lambda C_in, C_out, stride: SepConv(dim_in=C_in, dim_out=C_out, kernel_size=3, stride=stride, dilation=2)
 operation_sets['sep_k5'] = lambda C_in, C_out, stride: SepConv(dim_in=C_in, dim_out=C_out, kernel_size=5, stride=stride)
+operation_sets['sep_k5_d2'] = lambda C_in, C_out, stride: SepConv(dim_in=C_in, dim_out=C_out, kernel_size=5, stride=stride, dilation=2)
+
 
 operation_sets['mbconv_k3_e1'] = lambda C_in, C_out, stride: MBBlock(dim_in=C_in, dim_out=C_out, expansion=1, stride=stride, kernel_size=3, dilation=1)
 operation_sets['mbconv_k3_e3'] = lambda C_in, C_out, stride: MBBlock(dim_in=C_in, dim_out=C_out, expansion=3, stride=stride, kernel_size=3, dilation=1)
@@ -21,12 +31,12 @@ operation_sets['mbconv_k5_e3_d2'] = lambda C_in, C_out, stride: MBBlock(dim_in=C
 
 # Operation Definition
 class SepConv(nn.Module):
-    def __init__(self, dim_in, dim_out, kernel_size, stride, groups=1):
+    def __init__(self, dim_in, dim_out, kernel_size, stride, groups=1, dilation=1):
         super(SepConv, self).__init__()
         self.conv1 = ConvGnReLU(dim_in, dim_in, kernel_size=kernel_size, stride=stride,
-                                bias=False, groups=dim_in)
+                                bias=True, groups=dim_in, dilation=dilation)
         self.conv2 = ConvGnReLU(dim_in, dim_out, kernel_size=1, stride=1,
-                                bias=False, groups=groups, relu='none')
+                                bias=True, groups=groups, relu='none')
 
     def forward(self, x):
         out = self.conv2(self.conv1(x))
@@ -46,7 +56,7 @@ class Identity(nn.Module):
 
 
 class ConvGnReLU(nn.Module):
-    def __init__(self, dim_in, dim_out, kernel_size, stride, dilation=1, bias=False, groups=1, relu='relu'):
+    def __init__(self, dim_in, dim_out, kernel_size, stride, dilation=1, bias=True, groups=1, relu='relu'):
         super(ConvGnReLU, self).__init__()
         padding = (kernel_size - 1) * dilation // 2
         self.conv = nn.Conv2d(dim_in, dim_out, kernel_size, stride, padding=padding, dilation=dilation, bias=bias, groups=groups)
