@@ -1,9 +1,10 @@
 """
     The implementation of HANet Head
 """
-import torch.nn as nn
-from models.segmentation.heads import SEG_HEAD_REGISTRY
 import torch
+import torch.nn as nn
+from models.segmentation.segmods.hanetmods import ASPP, HANet_Conv
+from models.segmentation.heads import SEG_HEAD_REGISTRY
 
 
 # refer to the implementation of `plain_head.py`
@@ -35,8 +36,7 @@ class HANetHead(nn.Module):
             os = 16
         else:
             os = 32
-        self.aspp = _AtrousSpatialPyramidPoolingModule(final_channel, 256,
-                                                       output_stride=os)
+        self.aspp = ASPP(final_channel, 256, output_stride=os)
 
         self.bot_fine = nn.Sequential(
             nn.Conv2d(channel_3rd, 48, kernel_size=1, bias=False),

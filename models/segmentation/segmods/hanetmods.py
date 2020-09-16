@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 import torch.nn.functional as F
+from .PosEmbedding import PosEmbedding1D, PosEncoding1D
 
 
 # refer to `https://github.com/shachoi/HANet/blob/master/network/HANet.py`
@@ -139,10 +140,11 @@ class ASPP(nn.Module):
 
         # Check if we are using distributed BN and use the nn from encoding.nn
         # library rather than using standard pytorch.nn
-        output_stride = cfg.MODLE.ASPP.output_stride
-        rates = cfg.MODLE.ASPP.rates
-        in_dim = cfg.MODLE.ASPP.in_dim
-        reduction_dim = cfg.MODLE.ASPP.reduction_dim
+        # put this configs to config files
+        output_stride = cfg.MODEL.STRIDE
+        rates = cfg.MODEL.HANET.ASPP_RATES
+        in_dim = cfg.MODEL.HANET.IN_DIM
+        reduction_dim = cfg.MODEL.HANET.REDUCTION_DIM
 
         if output_stride == 8:
             rates = [2 * r for r in rates]
