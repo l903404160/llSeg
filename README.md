@@ -27,15 +27,4 @@ This repo is constructed for reproducing many interesting DL algorithms. Now it 
 - [x] FCOS
 - [ ] BorderDet
 
-### Performance Statistics
-
-|Model| Backbone | Stride | Datasets | mAP|
-|-|-|-|-|-|
-|FCOS| ResNet-50-FPN| - | COCO-2017 Val |38.7%|
-
-> Tips: It is not easy to use in just one line command. May you need to be clear about `detectron2`.
-> More concrete usage will be updated after I completed the FCOS code.
-
->Refs:
-> 1. [detectron2](https://github.com/facebookresearch/detectron2)
-> 2. [fvcore](https://github.com/facebookresearch/fvcore)
+### New Line

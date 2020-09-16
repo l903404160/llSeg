@@ -233,20 +233,13 @@ class DefaultTrainer(SimpleTrainer):
         super(DefaultTrainer, self).__init__(model, data_loader, optimizer)
 
         self.scheduler = self.build_lr_scheduler(cfg, optimizer)
-        # TODO Choice Checkpoint
-        # self.checkpointer = GenericCheckpoint(
-        #     model,
-        #     cfg.OUTPUT_DIR,
-        #     optimizer=optimizer,
-        #     scheduler=self.scheduler
-        # )
-        self.checkpointer = DetectionCheckpointer(
-            # Assume you want to save checkpoints together with logs/statistics
+        self.checkpointer = GenericCheckpoint(
             model,
             cfg.OUTPUT_DIR,
             optimizer=optimizer,
-            scheduler=self.scheduler,
+            scheduler=self.scheduler
         )
+
         self.start_iter = 0
         self.max_iter = cfg.SOLVER.MAX_ITER
         self.cfg = cfg
@@ -457,9 +450,9 @@ class DefaultTrainer(SimpleTrainer):
                     results[dataset_name] = {}
                     continue
             # Segmentation
-            # results_i = inference_on_dataset(model, data_loader, evaluator)
+            results_i = inference_on_dataset(model, data_loader, evaluator)
             # Detection
-            results_i = inference_on_detection_dataset(model, data_loader, evaluator)
+            # results_i = inference_on_detection_dataset(model, data_loader, evaluator)
             results[dataset_name] = results_i
             if comm.is_main_process():
                 assert isinstance(

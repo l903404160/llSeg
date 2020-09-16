@@ -66,18 +66,3 @@ class SegDatasetMapper(object):
         else:
             tfm_gens.append(T.ResizeFromScales(scales=scales))
         return tfm_gens
-
-if __name__ == '__main__':
-    data_dict = {
-        'file_name': '/home/haida_sunxin/lqx/data/city/leftImg8bit/val/frankfurt/frankfurt_000001_083852_leftImg8bit.png',
-        'sem_seg_file_name': '/home/haida_sunxin/lqx/data/city/gtFine/val/frankfurt/frankfurt_000001_083852_gtFine_labelTrainIds.png',
-        'info':{
-            'height':100,
-            'width':200
-        }
-    }
-    from configs.defaults import _C as cfg
-    mapper = SegDatasetMapper(cfg, True)
-    label = utils.read_image(data_dict['sem_seg_file_name'], format='L')
-
-    print('hah')

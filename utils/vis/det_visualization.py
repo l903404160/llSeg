@@ -48,10 +48,10 @@ if __name__ == "__main__":
     parser.add_argument("--conf-threshold", default=0.5, type=float, help="confidence threshold")
     args = parser.parse_args()
 
-    args.input = '/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101_test/inference_TTA/coco_instances_results.json'
-    args.output = '/home/haida_sunxin/lqx/code/llseg/exp/Cascade_cluster_101_test/inference_TTA/vis'
-    args.dataset = 'visdrone_cluster_test'
-    args.conf_threshold = 0.3
+    args.input = '/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_darts_box/inference/coco_instances_results.json'
+    args.output = '/home/haida_sunxin/lqx/code/llseg/exp/fcos_r50_darts_box/inference/vis'
+    args.dataset = 'coco_2017_val'
+    args.conf_threshold = 0.4
 
     logger = setup_logger()
 

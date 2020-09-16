@@ -1,4 +1,4 @@
-from .base import CfgNode as CN
+from configs.base import CfgNode as CN
 
 _C = CN()
 
@@ -9,8 +9,8 @@ _C.SEED = -1
 
 _C.DATASETS = CN()
 _C.DATASETS.ROOT = '/home/haida_sunxin/lqx/data/'
-_C.DATASETS.TRAIN = ['cityscapes_fine_seg_train']
-_C.DATASETS.TEST = ['cityscapes_fine_seg_val']
+_C.DATASETS.TRAIN = ['cityscapes_train']
+_C.DATASETS.TEST = ['cityscapes_val']
 _C.DATASETS.RESIZE_SHORT_EDGE = False
 _C.DATASETS.SHORTEST_EDGE = 480
 

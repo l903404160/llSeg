@@ -1,0 +1,36 @@
+OUTPUT_DIR: "./cornernet"
+MODEL:
+  BUILDER: "base_anchorfree_builder"
+  BACKBONE:
+    NAME: "hourglass_builder"
+  ANCHORFREE:
+    ANCHORFREE_ON: True
+    ARCH: "CornerNet"
+  HOURGLASS:
+    OUT_FEATURES: ['hg1', 'hg2']
+  ANCHORFREE_HEADS:
+    NAME: "cornernet_head_builder"
+    NUM_CLASSES: 80
+    BATCH_SIZE_PER_IMAGE: 512
+    POSITIVE_FRACTION: 0.25
+    PULL_WEIGHT: 1e-1
+    PUSH_WEIGHT: 1e-1
+    REGR_WEIGHT: 1
+INPUT:
+  MIN_SIZE_TRAIN: (768,)
+  MAX_SIZE_TRAIN: 1536
+  MIN_SIZE_TEST: 768
+  MAX_SIZE_TEST: 1536
+  CROP:
+    TYPE: "absolute"
+    SIZE: (512, 512)
+DATASETS:
+  TRAIN: ("coco_2017_train",)
+  TEST: ("coco_2017_val",)
+SOLVER:
+  IMS_PER_BATCH: 16
+  BASE_LR: 2.5e-4
+  STEPS: (200000,)
+  MAX_ITER: 250000
+  ANCHORFREE_ON: True
+  ANCHORFREE_OPTIMIZER: "adam"

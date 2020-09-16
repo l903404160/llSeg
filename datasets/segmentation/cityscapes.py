@@ -33,4 +33,3 @@ def load_cityscapes_sem_seg_dict(image_dir, gt_dir):
             }
         )
     return ret
-

@@ -247,7 +247,6 @@ class FastRCNNOutputs(object):
             self._log_accuracy()
             return F.cross_entropy(self.pred_class_logits, self.gt_classes, reduction="mean")
 
-
     def smooth_l1_loss(self):
         """
         Compute the smooth L1 loss for box regression.
