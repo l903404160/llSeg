@@ -5,6 +5,7 @@ import copy
 import torch
 import logging
 import numpy as np
+import PIL.Image as I
 import datasets.dataset_utils as utils
 import datasets.transforms.transforms_gen as T
 
@@ -13,6 +14,7 @@ class SegDatasetMapper(object):
     def __init__(self, cfg, is_train=True):
         self.img_format = cfg.INPUT.IMG_FORMAT
         self.lbl_format = cfg.INPUT.LBL_FORMAT
+        self.pos_information = cfg.MODEL.HANET.POS_INFORMATION
         self.tfm_gens = self.build_transform_gen(cfg, is_train)
 
     def __call__(self, dataset_dict):
@@ -24,6 +26,12 @@ class SegDatasetMapper(object):
         image = utils.read_image(dataset_dict['file_name'], format=self.img_format)
         label = utils.read_image(dataset_dict['sem_seg_file_name'], format=self.lbl_format)
 
+        if self.pos_information:
+            pos_h = torch.arange(0, 1024).unsqueeze(0).unsqueeze(2).expand(-1, -1, 2048) // 8  # 0 ~ 127
+            pos_w = torch.arange(0, 2048).unsqueeze(0).unsqueeze(1).expand(-1, 1024, -1) // 16  # 0 ~ 127
+            pos_h = pos_h[0].byte().numpy()
+            pos_w = pos_w[0].byte().numpy()
+
         image, tfm = T.apply_transform_gens(self.tfm_gens, image)
         label = tfm.apply_segmentation(label)
 
@@ -31,11 +39,17 @@ class SegDatasetMapper(object):
 
         image = torch.as_tensor(np.ascontiguousarray(image.transpose(2, 0, 1)))
         label = torch.as_tensor(label.astype('long'))
-
+        if self.pos_information:
+            pos_h, pos_w = tfm.apply_position(pos_h), tfm.apply_position(pos_w)
+            pos_h = torch.as_tensor(pos_h)
+            pos_w = torch.as_tensor(pos_w)
         dataset_dict['image'] = image
         dataset_dict['sem_seg'] = label
         dataset_dict['height'] = h
         dataset_dict['width'] = w
+        if self.pos_information:
+            dataset_dict['pos_h'] = pos_h
+            dataset_dict['pos_w'] = pos_w
         return dataset_dict
 
     @staticmethod

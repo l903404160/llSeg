@@ -98,6 +98,8 @@ def trainval_batch_collator(batch):
         batch_data_dict['sem_seg_file_name'] = [item_data['sem_seg_file_name'] for item_data in batch]
         batch_data_dict['height'] = [item_data['height'] for item_data in batch]
         batch_data_dict['width'] = [item_data['width'] for item_data in batch]
+        batch_data_dict['pos_h'] = torch.stack([item_data['pos_h'] for item_data in batch], dim=0)
+        batch_data_dict['pos_w'] = torch.stack([item_data['pos_w'] for item_data in batch], dim=0)
         return batch_data_dict
     else:
         item = batch[0]
@@ -107,6 +109,8 @@ def trainval_batch_collator(batch):
         batch_data_dict['sem_seg_file_name'] = item['sem_seg_file_name']
         batch_data_dict['height'] = item['height']
         batch_data_dict['width'] = item['width']
+        batch_data_dict['pos_h'] = item['pos_h'].unsqueeze(0)
+        batch_data_dict['pos_w'] = item['pos_w'].unsqueeze(0)
         return batch_data_dict
 
 

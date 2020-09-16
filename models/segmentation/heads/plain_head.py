@@ -36,10 +36,16 @@ class PlainHead(nn.Module):
             pred, aux_pred = pred
             loss = self.loss_fn(pred, label)
             aux_loss = self.loss_fn(aux_pred, label)
-            return loss + self.aux_weight * aux_loss
+            aux_loss = self.aux_weight * aux_loss
+            return {
+                'loss': loss,
+                'aux_loss': aux_loss
+            }
         else:
             loss = self.loss_fn(pred, label)
-            return loss
+            return {
+                'loss': loss
+            }
 
     def forward(self, data_input, label=None):
 

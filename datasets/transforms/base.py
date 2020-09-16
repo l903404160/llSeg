@@ -234,6 +234,8 @@ class Transform(metaclass=ABCMeta):
         )
         setattr(cls, "apply_" + data_type, func)
 
+    def apply_position(self, pos:np.ndarray) -> np.ndarray:
+        return self.apply_image(pos)
 
 _T = TypeVar("_T")
 
@@ -715,6 +717,9 @@ class BlendTransform(Transform):
         Apply no transform on the full-image segmentation.
         """
         return segmentation
+
+    def apply_position(self, pos:np.ndarray) -> np.ndarray:
+        return pos
 
     def inverse(self) -> Transform:
         """

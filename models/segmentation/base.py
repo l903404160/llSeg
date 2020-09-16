@@ -12,8 +12,9 @@ from models.segmentation.heads import head_builder
 class GeneralSemanticSegmentationModel(nn.Module):
     def __init__(self, cfg):
         super(GeneralSemanticSegmentationModel, self).__init__()
-        self.device = cfg.MODEL.DEVICE
         self._cfg = cfg
+        self.device = cfg.MODEL.DEVICE
+        self.pos_information = cfg.MODEL.HANET.POS_INFORMATION
         self.norm = self.preprocess_image()
 
         self.backbone = backbone_builder(cfg)
@@ -48,10 +49,11 @@ class GeneralSemanticSegmentationModel(nn.Module):
         feats = self.backbone(data_input)
         if self.training:
             assert label is not None, "Label should have correct value during training"
-            loss = self.head(feats, label)
-            loss_dict = {
-                'loss_ce': loss
-            }
+            if self.pos_information:
+                pos = (data_dict['pos_h'], data_dict['pos_w'])
+                loss_dict = self.head(feats, label, pos)
+            else:
+                loss_dict = self.head(feats, label)
             return loss_dict
         else:
             pred = self.head(feats)

@@ -1,0 +1,20 @@
+__BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/seg_base.yaml"
+
+OUTPUT_DIR: './hanet'
+
+MODEL:
+  STRIDE: 8
+  HANET:
+    POS_INFORMATION: True
+  HEAD:
+    NAME: "hanet_builder"
+SOLVER:
+  BASE_LR: 0.01
+  LR_SCHEDULER_NAME: "WarmupPolyLR"
+  POWER: 0.9
+  IMS_PER_BATCH: 8
+  MAX_ITER: 60000
+TEST:
+  AUG: False
+  SCALES: [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+  FLIP: False

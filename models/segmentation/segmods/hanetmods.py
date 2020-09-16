@@ -20,9 +20,9 @@ class HANet_Conv(nn.Module):
         pos_rfactor = cfg.MODEL.HANET.POS_RFACTOR
         pos_noise = cfg.MODEL.HANET.POS_NOISE
 
-        self.pooling = cfg.MODEL.HANET.POOLING
-        self.pos_injection = cfg.MODEL.HANET.POS_INJECTION
         self.layer = cfg.MODEL.HANET.LAYER
+        self.pos_injection = cfg.MODEL.HANET.POS_INJECTION
+        self.pooling = cfg.MODEL.HANET.POOLING
         self.dropout_prob = cfg.MODEL.HANET.DROPOUT_PROB
         self.sigmoid = nn.Sigmoid()
 
@@ -38,7 +38,7 @@ class HANet_Conv(nn.Module):
         self.attention_first = nn.Sequential(
             nn.Conv1d(in_channels=in_channel, out_channels=mid_1_channel,
                       kernel_size=1, stride=1, padding=0, bias=False),
-            norm_layer(mid_1_channel),
+            torch.nn.SyncBatchNorm(mid_1_channel),
             nn.ReLU(inplace=True))
 
         if self.layer == 2:
@@ -50,7 +50,7 @@ class HANet_Conv(nn.Module):
             self.attention_second = nn.Sequential(
                 nn.Conv1d(in_channels=mid_1_channel, out_channels=mid_2_channel,
                           kernel_size=3, stride=1, padding=1, bias=True),
-                norm_layer(mid_2_channel),
+                torch.nn.SyncBatchNorm(mid_2_channel),
                 nn.ReLU(inplace=True))
             self.attention_third = nn.Sequential(
                 nn.Conv1d(in_channels=mid_2_channel, out_channels=out_channel,
@@ -182,7 +182,7 @@ class ASPP(nn.Module):
             nn.Conv2d(in_dim, 256, kernel_size=1, bias=False),
             norm_layer(256), nn.ReLU(inplace=True))
 
-    def forrward(self, x):
+    def forward(self, x):
         x_size = x.size()
 
         img_features = self.img_pooling(x)

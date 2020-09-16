@@ -105,6 +105,10 @@ class ResizeTransform(Transform):
         segmentation = self.apply_image(segmentation, interp=Image.NEAREST)
         return segmentation
 
+    def apply_position(self, pos:np.ndarray) -> np.ndarray:
+        pos = self.apply_image(pos, interp=Image.NEAREST)
+        return pos
+
     def inverse(self):
         return ResizeTransform(self.new_h, self.new_w, self.h, self.w, self.interp)
 

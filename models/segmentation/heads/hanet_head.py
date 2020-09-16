@@ -17,14 +17,14 @@ class HANetHead(nn.Module):
 
         self.num_classes = cfg.MODEL.NUM_CLASSES
         self.hanet_conv_flags = cfg.MODEL.HANET.HANET_CONV_FLAGS
-        self.aug_loss = cfg.MODEL.HEAD.AUX_LOSS
+        self.aux_loss = cfg.MODEL.HEAD.AUX_LOSS
         self.aux_weight = cfg.MODEL.HEAD.AUX_LOSS_WEIGHT
 
         channel_3rd = 256
         prev_final_channel = 1024
         final_channel = 2048
 
-        self.aspp = ASPP(cfg)
+        self.aspp = ASPP(cfg, norm_layer)
 
         self.bot_fine = nn.Sequential(
             nn.Conv2d(channel_3rd, 48, kernel_size=1, bias=False),
@@ -45,56 +45,37 @@ class HANetHead(nn.Module):
             nn.ReLU(inplace=True))
 
         self.final2 = nn.Sequential(
-            nn.Conv2d(256, cfg.num_classes, kernel_size=1, bias=True))
-        if self.cfg.aux_loss is True:
+            nn.Conv2d(256, self.num_classes, kernel_size=1, bias=True))
+        if self.aux_loss is True:
             self.dsn = nn.Sequential(
                 nn.Conv2d(prev_final_channel, 512, kernel_size=3, stride=1, padding=1),
                 norm_layer(512),
                 nn.ReLU(inplace=True),
                 nn.Dropout2d(0.1),
-                nn.Conv2d(512, cfg.num_classes, kernel_size=1, stride=1, padding=0, bias=True)
+                nn.Conv2d(512, self.num_classes, kernel_size=1, stride=1, padding=0, bias=True)
             )
             initialize_weights(self.dsn)
 
         if self.hanet_conv_flags[0] == 1:
-            self.hanet0 = HANet_Conv(prev_final_channel, final_channel,
-                                     self.cfg.hanet_set[0], self.cfg.hanet_set[1], self.cfg.hanet_set[2],
-                                     self.cfg.hanet_pos[0], self.cfg.hanet_pos[1],
-                                     pos_rfactor=self.cfg.pos_rfactor, pooling=self.cfg.pooling,
-                                     dropout_prob=self.cfg.dropout, pos_noise=self.cfg.pos_noise)
+            self.hanet0 = HANet_Conv(prev_final_channel, final_channel, cfg, norm_layer)
             initialize_weights(self.hanet0)
 
         if self.hanet_conv_flags[1] == 1:
-            self.hanet1 = HANet_Conv(final_channel, 1280,
-                                     self.cfg.hanet_set[0], self.cfg.hanet_set[1], self.cfg.hanet_set[2],
-                                     self.cfg.hanet_pos[0], self.cfg.hanet_pos[1],
-                                     pos_rfactor=self.cfg.pos_rfactor, pooling=self.cfg.pooling,
-                                     dropout_prob=self.cfg.dropout, pos_noise=self.cfg.pos_noise)
+            self.hanet1 = HANet_Conv(final_channel, 1280, cfg, norm_layer)
             initialize_weights(self.hanet1)
 
         if self.hanet_conv_flags[2] == 1:
-            self.hanet2 = HANet_Conv(1280, 256,
-                                     self.cfg.hanet_set[0], self.cfg.hanet_set[1], self.cfg.hanet_set[2],
-                                     self.cfg.hanet_pos[0], self.cfg.hanet_pos[1],
-                                     pos_rfactor=self.cfg.pos_rfactor, pooling=self.cfg.pooling,
-                                     dropout_prob=self.cfg.dropout, pos_noise=self.cfg.pos_noise)
+            self.hanet2 = HANet_Conv(1280, 256, cfg, norm_layer)
             initialize_weights(self.hanet2)
 
         if self.hanet_conv_flags[3] == 1:
-            self.hanet3 = HANet_Conv(304, 256,
-                                     self.cfg.hanet_set[0], self.cfg.hanet_set[1], self.cfg.hanet_set[2],
-                                     self.cfg.hanet_pos[0], self.cfg.hanet_pos[1],
-                                     pos_rfactor=self.cfg.pos_rfactor, pooling=self.cfg.pooling,
-                                     dropout_prob=self.cfg.dropout, pos_noise=self.cfg.pos_noise)
+            self.hanet3 = HANet_Conv(304, 256, cfg, norm_layer)
             initialize_weights(self.hanet3)
 
         if self.hanet_conv_flags[4] == 1:
-            self.hanet4 = HANet_Conv(256, self.num_classes,
-                                     self.cfg.hanet_set[0], self.cfg.hanet_set[1], self.cfg.hanet_set[2],
-                                     self.cfg.hanet_pos[0], self.cfg.hanet_pos[1],
-                                     pos_rfactor=self.cfg.pos_rfactor, pooling='max',
-                                     dropout_prob=self.cfg.dropout, pos_noise=self.cfg.pos_noise)
-        initialize_weights(self.hanet4)
+            self.hanet4 = HANet_Conv(256, self.num_classes, cfg, norm_layer)
+            initialize_weights(self.hanet4)
+
         initialize_weights(self.aspp)
         initialize_weights(self.bot_aspp)
         initialize_weights(self.bot_fine)
@@ -103,15 +84,15 @@ class HANetHead(nn.Module):
 
         self.loss_fn = get_loss_from_cfg(cfg)
 
-    def forward(self, data_input, label=None):
-        low_level = data_input['fea']
+    def forward(self, data_input, label=None, pos=None):
+        low_level = data_input['res1']
         aux_out = data_input['res3']
         x = data_input['res4']
         x_size = label.size()[-2:]
 
         # hanet 0
         if self.hanet_conv_flags[0] == 1:
-            x = self.hanet0(aux_out, x, self.cfg.pos)
+            x = self.hanet0(aux_out, x, pos)
 
         represent = x
 
@@ -119,13 +100,13 @@ class HANetHead(nn.Module):
 
         # hanet 1
         if self.hanet_conv_flags[1] == 1:
-            x = self.hanet1(represent, x, self.cfg.pos)
+            x = self.hanet1(represent, x, pos)
 
         dec0_up = self.bot_aspp(x)
 
         # hanet 2
         if self.hanet_conv_flags[2] == 1:
-            dec0_up = self.hanet2(x, dec0_up, self.cfg.pos)
+            dec0_up = self.hanet2(x, dec0_up, pos)
 
         dec0_fine = self.bot_fine(low_level)
         dec0_up = Upsample(dec0_up, low_level.size()[2:])
@@ -135,19 +116,19 @@ class HANetHead(nn.Module):
 
         # hanet 3
         if self.hanet_conv_flags[3] == 1:
-            dec1 = self.hanet3(dec0, dec1, self.cfg.pos)
+            dec1 = self.hanet3(dec0, dec1, pos)
 
         dec2 = self.final2(dec1)
 
         if self.hanet_conv_flags[4] == 1:
-            dec2 = self.hanet4(dec1, dec2, self.cfg.pos)
+            dec2 = self.hanet4(dec1, dec2, pos)
 
-        main_out = Upsample(dec2, x_size[2:])
+        main_out = Upsample(dec2, x_size)
 
         if label is None:
             return main_out
 
-        if self.aug_loss:
+        if self.aux_loss:
             aux_out = self.dsn(aux_out)
             pred = (main_out, aux_out)
             return self._compute_loss(pred, label)
@@ -159,7 +140,9 @@ class HANetHead(nn.Module):
         if self.aux_loss:
             pred, aux_pred = pred
             loss = self.loss_fn(pred, label)
-            label = nn.functional.interpolate(label, size=aux_pred.shape[2:], mode='nearest')
+            label = label.unsqueeze(1).float()
+            label = nn.functional.interpolate(label, size=aux_pred.size()[-2:], mode='nearest')
+            label = label.squeeze(1).long()
             aux_loss = self.loss_fn(aux_pred, label)
             return {
                 'loss': loss,
@@ -176,8 +159,7 @@ def Upsample(x, size):
     """
     Wrapper Around the Upsample Call
     """
-    return nn.functional.interpolate(x, size=size, mode='bilinear',
-                                     align_corners=True)
+    return nn.functional.interpolate(x, size=size, mode='bilinear', align_corners=True)
 
 
 def initialize_weights(*models):
