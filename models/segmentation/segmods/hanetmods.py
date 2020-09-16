@@ -11,15 +11,19 @@ from .PosEmbedding import PosEmbedding1D, PosEncoding1D
 # refer to `https://github.com/shachoi/HANet/blob/master/network/HANet.py`
 # @Mingyang Li
 class HANet_Conv(nn.Module):
-    # def __init__(self, cfg, norm_layer=nn.BatchNorm2d):
-    def __init__(self, in_channel, out_channel, kernel_size=3, r_factor=64, layer=3, pos_injection=2, is_encoding=1,
-                         pos_rfactor=8, pooling='mean', dropout_prob=0.0, pos_noise=0.0, norm_layer=nn.BatchNorm2d):
+    def __init__(self, in_channel, out_channel, cfg, norm_layer=nn.BatchNorm2d):
         super(HANet_Conv, self).__init__()
 
-        self.pooling = pooling
-        self.pos_injection = pos_injection
-        self.layer = layer
-        self.dropout_prob = dropout_prob
+        kernel_size = cfg.MODEL.HANET.KERNEL_SIZE
+        r_factor = cfg.MODEL.HANET.R_FACTOR
+        is_encoding = cfg.MODEL.HANET.IS_ENCODING
+        pos_rfactor = cfg.MODEL.HANET.POS_RFACTOR
+        pos_noise = cfg.MODEL.HANET.POS_NOISE
+
+        self.pooling = cfg.MODEL.HANET.POOLING
+        self.pos_injection = cfg.MODEL.HANET.POS_INJECTION
+        self.layer = cfg.MODEL.HANET.LAYER
+        self.dropout_prob = cfg.MODEL.HANET.DROPOUT_PROB
         self.sigmoid = nn.Sigmoid()
 
         if r_factor > 0:
@@ -37,11 +41,11 @@ class HANet_Conv(nn.Module):
             norm_layer(mid_1_channel),
             nn.ReLU(inplace=True))
 
-        if layer == 2:
+        if self.layer == 2:
             self.attention_second = nn.Sequential(
                 nn.Conv1d(in_channels=mid_1_channel, out_channels=out_channel,
                           kernel_size=kernel_size, stride=1, padding=kernel_size // 2, bias=True))
-        elif layer == 3:
+        elif self.layer == 3:
             mid_2_channel = (mid_1_channel * 2)
             self.attention_second = nn.Sequential(
                 nn.Conv1d(in_channels=mid_1_channel, out_channels=mid_2_channel,
