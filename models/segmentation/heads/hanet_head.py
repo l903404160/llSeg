@@ -88,7 +88,8 @@ class HANetHead(nn.Module):
         low_level = data_input['res1']
         aux_out = data_input['res3']
         x = data_input['res4']
-        x_size = label.size()[-2:]
+        if label is not None:
+            x_size = label.size()[-2:]
 
         # hanet 0
         if self.hanet_conv_flags[0] == 1:
@@ -123,10 +124,10 @@ class HANetHead(nn.Module):
         if self.hanet_conv_flags[4] == 1:
             dec2 = self.hanet4(dec1, dec2, pos)
 
-        main_out = Upsample(dec2, x_size)
-
         if label is None:
-            return main_out
+            return dec2
+
+        main_out = Upsample(dec2, x_size)
 
         if self.aux_loss:
             aux_out = self.dsn(aux_out)
