@@ -1,6 +1,6 @@
 __BASE__: "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/seg_base.yaml"
 
-OUTPUT_DIR: './sepcls'
+OUTPUT_DIR: './sepcls_aux'
 
 MODEL:
   STRIDE: 8

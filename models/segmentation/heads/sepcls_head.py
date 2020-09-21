@@ -42,22 +42,6 @@ class SepClsHead(nn.Module):
             self.aux_loss = True
             self.aux_weight = cfg.MODEL.HEAD.AUX_LOSS_WEIGHT
 
-    def _compute_loss(self, pred, label):
-        if self.aux_loss:
-            pred, aux_pred = pred
-            loss = self.loss_fn(pred, label)
-            aux_loss = self.loss_fn(aux_pred, label)
-            aux_loss = self.aux_weight * aux_loss
-            return {
-                'loss': loss,
-                'aux_loss': aux_loss
-            }
-        else:
-            loss = self.loss_fn(pred, label)
-            return {
-                'loss': loss
-            }
-
     def _compute_losses(self, pred, sep_cls_pred, label, aux_pred=None):
 
         size = label.size()[-2:]
@@ -71,9 +55,7 @@ class SepClsHead(nn.Module):
 
         if self.aux_loss:
             loss = self.loss_fn(pred, label)
-            label = label.unsqueeze(1).float()
-            label = nn.functional.interpolate(label, size=aux_pred.size()[-2:], mode='nearest')
-            label = label.squeeze(1).long()
+            aux_pred = nn.functional.interpolate(aux_pred, size=size, mode='bilinear', align_corners=True)
             aux_loss = self.loss_fn(aux_pred, label)
 
             return {
@@ -109,8 +91,8 @@ class SepClsHead(nn.Module):
         sep_cls_pred = F.interpolate(sep_cls_pred, size=size, mode='bilinear', align_corners=True)
         sep_cls_pred = F.softmax(sep_cls_pred, dim=1)
         # process the sep_classes_pred
-        for cls in self.sep_classes:
-            pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
+        # for cls in self.sep_classes:
+        #     pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
         return pred
 
 @SEG_HEAD_REGISTRY.register()
