@@ -29,7 +29,7 @@ class FCOSAnchorFreeHead(nn.Module):
         # self.fcos_head = FCOSHead(cfg, [input_shape[f] for f in self.in_features])
 
         # use searched head
-        self.fcos_head = SearchFCOSHead(dim_in=256, dim_mid=128, dim_out=256)
+        self.fcos_head = SearchFCOSHead(dim_in=256, dim_mid=256, dim_out=256)
 
         self.in_channels_to_top_module = self.fcos_head.in_channels_to_top_module
 

@@ -8,10 +8,11 @@ from layers import cat, ml_nms
 from utils.nn.focal_loss import sigmoid_focal_loss_jit
 from utils.nn.fcos_loss import IOULoss
 from models.detection.anchorfree_heads.fcos.fcos_tools import compute_locations
-from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, Genotype, Genotype_fcos, parse_darts, parse_direct
+from models.detection.anchorfree_heads.search_head.genotype import PRIMITIVES, PRIMITIVES_box, PRIMITIVES_fpn, Genotype, Genotype_fcos, parse_direct, Genotype_fpn_fcos
 from models.detection.anchorfree_heads.search_head.operations import *
 from structures import Instances, Boxes
 from models.detection.anchorfree_heads.search_head.cells import *
+from models.detection.anchorfree_heads.search_head.fpn_cells import build_fpn_cell, parse_fpn
 
 from models.detection.modules.postprocessing import detector_postprocess
 
@@ -59,9 +60,11 @@ class SearchHead(nn.Module):
         self._reg_loss_func = IOULoss(iou_type="giou")
 
         self._depth = 4
-        self._box_depth = 4
+        self._box_depth = 8
         self.cls_cells, cls_k = build_direct_cells(layers, self._C_in, self._C_mid, self._C_out, stride=1, depth=self._depth, pc=True, search_part='cls')
         self.box_cells, box_k = build_direct_cells(layers, self._C_in, self._C_mid, self._C_out, stride=1, depth=self._box_depth, pc=True, search_part='box')
+
+        self.fpn_cells, fpn_k, edge_k = build_fpn_cell(layers=1, C_in=self._C_in, C_out=self._C_in, pc=True)
 
         # Headers
         self.cls_logits = nn.Conv2d(
@@ -81,9 +84,12 @@ class SearchHead(nn.Module):
 
         num_cls_ops = len(PRIMITIVES)
         num_box_ops = len(PRIMITIVES_box)
+        num_fpn_ops = len(PRIMITIVES_fpn)
 
         self.alphas_normal = torch.autograd.Variable(1e-3 * torch.randn(cls_k, num_cls_ops).cuda(), requires_grad=True)
         self.alphas_normal_2 = torch.autograd.Variable(1e-3 * torch.randn(box_k, num_box_ops).cuda(), requires_grad=True)
+        self.alphas_fpn = torch.autograd.Variable(1e-3 * torch.randn(fpn_k, num_fpn_ops).cuda(), requires_grad=True)
+        self.alphas_edge = torch.autograd.Variable(1e-3 * torch.randn(edge_k).view(-1, 2).cuda(), requires_grad=True)
 
         # init loss
         for modules in [self.cls_logits,self.bbox_pred, self.ctrness]:
@@ -111,6 +117,11 @@ class SearchHead(nn.Module):
         return weights2
 
     def forward(self, features):
+        for i, fpn_cell in enumerate(self.fpn_cells):
+            weights_fpn = F.softmax(self.alphas_fpn, dim=-1)
+            weights_edge = F.softmax(self.alphas_edge, dim=-1)
+            features = fpn_cell(features, weights_fpn, weights_edge)
+
         feats = [features[f] for f in self._in_features]
 
         cls_preds = []
@@ -140,7 +151,8 @@ class SearchHead(nn.Module):
         arch_params = [
             self.alphas_normal,
             self.alphas_normal_2,
-            # self.betas_normal
+            self.alphas_fpn,
+            self.alphas_edge
         ]
         return arch_params
 
@@ -151,8 +163,10 @@ class SearchHead(nn.Module):
         # Direct Cell
         geno_normal = parse_direct(F.softmax(self.alphas_normal, dim=-1).detach().cpu())
         geno_normal_2 = parse_direct(F.softmax(self.alphas_normal_2, dim=-1).detach().cpu(), search_part='box')
+        geno_fpn, geno_edge = parse_fpn(F.softmax(self.alphas_fpn, dim=-1).detach().cpu(), weights_edge=F.softmax(self.alphas_edge, dim=-1).detach().cpu())
 
         genotype = Genotype_fcos(normal_cls=geno_normal, normal_box=geno_normal_2)
+        genotype = Genotype_fpn_fcos(normal_cls=geno_normal, normal_box=geno_normal_2, normal_fpn=geno_fpn, normal_edge=geno_edge)
         return genotype
 
     def fcos_loss(self, preds, targets):

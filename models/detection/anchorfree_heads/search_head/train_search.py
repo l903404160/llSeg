@@ -51,7 +51,7 @@ def main(args):
     # dataset part
     root_dir = '/home/haida_sunxin/lqx/data/search'
     batch_size = 1
-    out_dir = './out_noskip'
+    out_dir = './out'
     os.makedirs(out_dir, exist_ok=True)
 
     # logging config

@@ -14,8 +14,8 @@ from models.detection.anchorfree_heads.search_head.operations import operation_s
 # genotype = Genotype(normal=[('dil_4_conv_3x3', 0), ('sep_conv_5x5', 1), ('dil_4_conv_3x3', 2), ('dil_4_conv_3x3', 0),
 #                             ('sep_conv_3x3', 1), ('sep_conv_5x5', 3), ('sep_conv_5x5', 2), ('sep_conv_3x3', 1)], normal_concat=range(4, 6))
 
-genotype = Genotype_fcos(normal_cls=[('mbconv_k3_e3', 0), ('mbconv_k3_e3', 1), ('mbconv_k3_e1', 2), ('mbconv_k3_e3', 3)],
-                    normal_box=[('mbconv_k3_e3_d2', 0), ('mbconv_k3_e3', 1), ('mbconv_k3_e3_d2', 2), ('mbconv_k3_e3_d2', 3)])
+genotype = Genotype_fcos(normal_cls=[('sep_k5', 0), ('sep_k3', 1), ('sep_k3', 2), ('sep_k5', 3)],
+                    normal_box=[('conv_k5', 0), ('conv_k5', 1), ('conv_k3_d2', 2), ('conv_k3_d2', 3), ('conv_k5', 4), ('conv_k5', 5), ('conv_k3', 6), ('conv_k3_d2', 7)])
 
 
 class DirectCell(nn.Module):
