@@ -6,6 +6,7 @@ from .pcnet import pchead_builder
 from .plain_head import plainhead_builder
 from .nl_head import nlhead_builder
 from .hanet_head import hanet_builder
+from .sepcls_head import sepclshead_builder
 
 
 def head_builder(cfg):

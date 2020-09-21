@@ -85,13 +85,25 @@ class HANetHead(nn.Module):
         self.loss_fn = get_loss_from_cfg(cfg)
 
     def forward(self, data_input, label=None, pos=None):
-        low_level = data_input['res1']
-        aux_out = data_input['res3']
-        x = data_input['res4']
         if label is not None:
             x_size = label.size()[-2:]
 
-        # hanet 0
+        dec2, aux_out = self._forward_features(data_input, pos)
+
+        main_out = Upsample(dec2, x_size)
+
+        if self.aux_loss:
+            aux_out = self.dsn(aux_out)
+            pred = (main_out, aux_out)
+            return self._compute_loss(pred, label)
+
+        else:
+            return self._compute_loss(main_out, label)
+
+    def _forward_features(self, data_input, pos):
+        low_level = data_input['res1']
+        aux_out = data_input['res3']
+        x = data_input['res4']
         if self.hanet_conv_flags[0] == 1:
             x = self.hanet0(aux_out, x, pos)
 
@@ -123,19 +135,7 @@ class HANetHead(nn.Module):
 
         if self.hanet_conv_flags[4] == 1:
             dec2 = self.hanet4(dec1, dec2, pos)
-
-        if label is None:
-            return dec2
-
-        main_out = Upsample(dec2, x_size)
-
-        if self.aux_loss:
-            aux_out = self.dsn(aux_out)
-            pred = (main_out, aux_out)
-            return self._compute_loss(pred, label)
-
-        else:
-            return self._compute_loss(main_out, label)
+        return dec2, aux_out
 
     def _compute_loss(self, pred, label):
         if self.aux_loss:
@@ -155,6 +155,10 @@ class HANetHead(nn.Module):
                 'loss': loss
             }
 
+    def inference(self, data_input, size, pos):
+        dec2, _ = self._forward_features(data_input, pos)
+        main_out = Upsample(dec2, size)
+        return main_out
 
 def Upsample(x, size):
     """

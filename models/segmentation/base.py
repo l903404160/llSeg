@@ -50,7 +50,7 @@ class GeneralSemanticSegmentationModel(nn.Module):
         if self.training:
             assert label is not None, "Label should have correct value during training"
             if self.pos_information:
-                pos = (data_dict['pos_h'], data_dict['pos_w'])
+                pos = (data_dict['pos_h'].to(self.device), data_dict['pos_w'].to(self.device))
                 loss_dict = self.head(feats, label, pos)
             else:
                 loss_dict = self.head(feats, label)
@@ -58,9 +58,8 @@ class GeneralSemanticSegmentationModel(nn.Module):
         else:
             if self.pos_information:
                 pos = (data_dict['pos_h'].to(self.device), data_dict['pos_w'].to(self.device))
-                pred = self.head(feats, pos=pos)
+                prediction = self.head(feats, pos=pos)
             else:
-                pred = self.head(feats)
-            pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
-            prediction = F.softmax(pred, dim=1)
+                prediction = self.head.inference(feats, size)
+                # pred = self.head(feats)
             return {'sem_seg': prediction}

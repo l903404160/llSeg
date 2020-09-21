@@ -52,11 +52,7 @@ class NLHead(nn.Module):
         x = self.non_local(x)
 
         pred = self.classifier(x)
-
-        if label is None:
-            return pred
         size = label.size()[-2:]
-
         if self.aux_loss:
             aux_pred = self.aux_classifier(data_input['res3'])
             aux_pred = F.interpolate(aux_pred, size, mode='bilinear', align_corners=True)
@@ -66,6 +62,13 @@ class NLHead(nn.Module):
             pred = F.interpolate(pred, size, mode='bilinear', align_corners=True)
             return self._compute_loss(pred, label)
 
+    def inference(self, data_input, size):
+        x = self.context(data_input['res4'])
+        x = self.non_local(x)
+        pred = self.classifier(x)
+        pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
+        pred = F.softmax(pred, dim=1)
+        return pred
 
 class NLCCNetHead(nn.Module):
     def __init__(self, cfg, norm_layer=None):

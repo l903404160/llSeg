@@ -47,13 +47,10 @@ class PlainHead(nn.Module):
                 'loss': loss
             }
 
-    def forward(self, data_input, label=None):
+    def forward(self, data_input, label):
 
         res4 = data_input['res4']
         pred = self.classifier(res4)
-
-        if label is None:
-            return pred
         size = label.size()[-2:]
 
         if self.aux_loss:
@@ -65,6 +62,12 @@ class PlainHead(nn.Module):
             pred = F.interpolate(pred, size, mode='bilinear', align_corners=True)
             return self._compute_loss(pred, label)
 
+    def inference(self, data_input, size):
+        res4 = data_input['res4']
+        pred = self.classifier(res4)
+        pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
+        pred = F.softmax(pred, dim=1)
+        return pred
 
 @SEG_HEAD_REGISTRY.register()
 def plainhead_builder(cfg):

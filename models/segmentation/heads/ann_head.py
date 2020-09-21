@@ -48,11 +48,7 @@ class APNBHead(nn.Module):
         x = self.apnb(x)
 
         pred = self.classifier(x)
-
-        if label is None:
-            return pred
         size = label.size()[-2:]
-
         if self.aux_loss:
             aux_pred = self.aux_classifier(data_input['res3'])
             aux_pred = F.interpolate(aux_pred, size, mode='bilinear', align_corners=True)
@@ -62,6 +58,13 @@ class APNBHead(nn.Module):
             pred = F.interpolate(pred, size, mode='bilinear', align_corners=True)
             return self._compute_loss(pred, label)
 
+    def inference(self, data_input, size):
+        x = self.context(data_input['res4'])
+        x = self.apnb(x)
+        pred = self.classifier(x)
+        pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
+        pred = F.softmax(pred, dim=1)
+        return pred
 
 @SEG_HEAD_REGISTRY.register()
 def apnbhead_builder(cfg):
