@@ -94,7 +94,7 @@ class SepClsHead(nn.Module):
         # process the sep_classes_pred
         # for cls in self.sep_classes:
         #     pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
-        return sep_cls_pred
+        return pred
 
 @SEG_HEAD_REGISTRY.register()
 def sepclshead_builder(cfg):

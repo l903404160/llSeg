@@ -65,7 +65,7 @@ if __name__ == '__main__':
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/hanet.yaml"
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/sepcls.yaml"
 
-    args.eval_only = False
+    args.eval_only = True
     args.resume = True
 
     launch(

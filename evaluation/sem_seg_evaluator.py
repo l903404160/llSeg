@@ -127,11 +127,13 @@ class SemSegEvaluator(DatasetEvaluator):
         res["fwIoU"] = 100 * fiou
         res["mACC"] = 100 * macc
         res["pACC"] = 100 * pacc
+        res["IoU"] = 100 * iou
 
         if self._output_dir:
             file_path = os.path.join(self._output_dir, "sem_seg_evaluation.pth")
             with open(file_path, 'wb') as f:
                 torch.save(res, f)
+        res.pop("IoU")
 
         results = OrderedDict({"seg_seg": res})
         self._logger.info(results)
