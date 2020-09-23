@@ -11,6 +11,7 @@ class SepClsHead(nn.Module):
         super(SepClsHead, self).__init__()
 
         self.sep_classes = cfg.MODEL.HEAD.SEP_CLASSES
+        self.num_classes = cfg.MODEL.NUM_CLASSES
 
         self.classifier = nn.Sequential(
             nn.Conv2d(2048, 512, kernel_size=3, stride=1, padding=1),
@@ -25,7 +26,7 @@ class SepClsHead(nn.Module):
             norm_layer(512),
             nn.ReLU(inplace=True),
             nn.Dropout2d(0.05),
-            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES+1, kernel_size=1, stride=1, padding=0, bias=True)
         )
 
         self.loss_fn = get_loss_from_cfg(cfg)
@@ -51,7 +52,7 @@ class SepClsHead(nn.Module):
         for cls in self.sep_classes:
             sep_cls_mask[label == cls] = 1
         sep_cls_label = label * sep_cls_mask
-        sep_cls_label[sep_cls_label == 0] = 255
+        sep_cls_label[sep_cls_label == 0] = self.num_classes
 
         if self.aux_loss:
             loss = self.loss_fn(pred, label)
@@ -93,7 +94,7 @@ class SepClsHead(nn.Module):
         # process the sep_classes_pred
         # for cls in self.sep_classes:
         #     pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
-        return pred
+        return sep_cls_pred
 
 @SEG_HEAD_REGISTRY.register()
 def sepclshead_builder(cfg):

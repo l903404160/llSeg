@@ -58,9 +58,9 @@ def main(args):
 
 if __name__ == '__main__':
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3,4,5,6,7'
     args = default_argument_setup().parse_args()
-    args.num_gpus = 4
+    args.num_gpus = 8
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/baseline.yaml"
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/hanet.yaml"
     args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/sepcls.yaml"

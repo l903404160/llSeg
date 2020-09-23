@@ -206,6 +206,7 @@ def inference_on_dataset(model, data_loader, evaluator):
             # TODO May need change the inference interface
             outputs = model(inputs)
             outputs['sem_seg'] = torch.max(outputs['sem_seg'], dim=1)[1]
+
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
             total_compute_time += time.perf_counter() - start_compute_time

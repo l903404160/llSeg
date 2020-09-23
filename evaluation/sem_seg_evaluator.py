@@ -25,6 +25,9 @@ class SemSegEvaluator(DatasetEvaluator):
         self._num_classes = num_classes
         self._ignore_label = ignore_label
         self._N = num_classes + 1
+        self._vis_dir = os.path.join(self._output_dir, 'vis')
+        os.makedirs(self._output_dir, exist_ok=True)
+        os.makedirs(self._vis_dir, exist_ok=True)
 
         self._cpu_device = torch.device('cpu')
         self._logger = logging.getLogger("OUCWheel."+__name__)
@@ -35,6 +38,8 @@ class SemSegEvaluator(DatasetEvaluator):
         }
 
         meta = MetadataCatalog.get(dataset_name)
+        self.colormap = np.array(meta.get('stuff_classes_colormap', default=None))
+
         # Dict that maps contiguous training ids to COCO category ids
         try:
             c2d = meta.stuff_dataset_id_to_contiguous_id
@@ -62,9 +67,13 @@ class SemSegEvaluator(DatasetEvaluator):
         for input, output in zip(inputs, outputs):
             output = output['sem_seg'][0].to(self._cpu_device)
             pred = np.array(output, dtype=np.int)
+
+            # VIS
+            color_pred = Image.fromarray(self.colormap[pred].astype(np.uint8))
+            color_pred.save(os.path.join(self._vis_dir, os.path.basename(input["file_name"])))
+
             with open(self.input_file_to_gt_file[input["file_name"]], "rb") as f:
                 gt = np.array(Image.open(f), dtype=np.int)
-
 
             gt[gt == self._ignore_label] = self._num_classes
             self._conf_matrix += np.bincount(
@@ -92,7 +101,6 @@ class SemSegEvaluator(DatasetEvaluator):
             for conf_matrix in conf_matrix_list:
                 self._conf_matrix += conf_matrix
         if self._output_dir:
-            os.makedirs(self._output_dir, exist_ok=True)
             file_path = os.path.join(self._output_dir, "seg_seg_predictions.json")
             with open(file_path, 'w') as f:
                 f.write(json.dumps(self._predictions))
