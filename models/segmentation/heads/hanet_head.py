@@ -3,6 +3,7 @@
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from models.losses import get_loss_from_cfg
 from models.segmentation.heads import SEG_HEAD_REGISTRY
 from models.segmentation.segmods.hanetmods import ASPP, HANet_Conv
@@ -158,6 +159,8 @@ class HANetHead(nn.Module):
     def inference(self, data_input, size, pos):
         dec2, _ = self._forward_features(data_input, pos)
         main_out = Upsample(dec2, size)
+        main_out = F.softmax(main_out, dim=1)
+        main_out = torch.max(main_out, dim=1)[1]
         return main_out
 
 def Upsample(x, size):

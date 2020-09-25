@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from . import SEG_HEAD_REGISTRY
@@ -67,6 +68,7 @@ class PlainHead(nn.Module):
         pred = self.classifier(res4)
         pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
         pred = F.softmax(pred, dim=1)
+        pred = torch.max(pred, dim=1)[1]
         return pred
 
 @SEG_HEAD_REGISTRY.register()

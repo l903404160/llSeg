@@ -68,6 +68,7 @@ class NLHead(nn.Module):
         pred = self.classifier(x)
         pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
         pred = F.softmax(pred, dim=1)
+        pred = torch.max(pred, dim=1)[1]
         return pred
 
 class NLCCNetHead(nn.Module):

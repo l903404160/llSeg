@@ -9,6 +9,7 @@ from datasets.segmentation.builder import build_segmentation_test_loader
 from datasets.metacatalog.catalog import MetadataCatalog
 
 from evaluation.sem_seg_evaluator import SemSegEvaluator
+from evaluation.cityscapes_evaluator import CityscapesSemSegEvaluator
 from evaluation.evaluator import DatasetEvaluators
 
 
@@ -41,7 +42,11 @@ class SegTrainer(DefaultTrainer):
 
         evaluator_list = []
         evaluator_type = MetadataCatalog.get(dataset_name).evaluator_type
-        if evaluator_type in ["sem_seg", "coco_panoptic_seg"]:
+        if evaluator_type in ["city_sem_seg"]:
+            evaluator_list.append(
+                CityscapesSemSegEvaluator(dataset_name)
+            )
+        if evaluator_type in ['sem_seg', "coco_panoptic_seg"]:
             evaluator_list.append(
                 SemSegEvaluator(
                     dataset_name,

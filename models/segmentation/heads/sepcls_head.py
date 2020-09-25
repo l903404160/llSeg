@@ -10,7 +10,8 @@ class SepClsHead(nn.Module):
     def __init__(self, cfg, norm_layer=None):
         super(SepClsHead, self).__init__()
 
-        self.sep_classes = cfg.MODEL.HEAD.SEP_CLASSES
+        self.sep_small_classes = cfg.MODEL.HEAD.SEP_SMALL_CLASSES
+        self.sep_big_classes = cfg.MODEL.HEAD.SEP_BIG_CLASSES
         self.num_classes = cfg.MODEL.NUM_CLASSES
 
         self.classifier = nn.Sequential(
@@ -18,7 +19,7 @@ class SepClsHead(nn.Module):
             norm_layer(512),
             nn.ReLU(inplace=True),
             nn.Dropout2d(0.05),
-            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES + 1, kernel_size=1, stride=1, padding=0, bias=True)
         )
 
         self.sep_class_head = nn.Sequential(
@@ -26,7 +27,7 @@ class SepClsHead(nn.Module):
             norm_layer(512),
             nn.ReLU(inplace=True),
             nn.Dropout2d(0.05),
-            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES+1, kernel_size=1, stride=1, padding=0, bias=True)
+            nn.Conv2d(512, cfg.MODEL.NUM_CLASSES + 1, kernel_size=1, stride=1, padding=0, bias=True)
         )
 
         self.loss_fn = get_loss_from_cfg(cfg)
@@ -47,27 +48,34 @@ class SepClsHead(nn.Module):
 
         size = label.size()[-2:]
         pred = F.interpolate(pred, size, mode='bilinear', align_corners=True)
-        sep_cls_pred = F.interpolate(sep_cls_pred, size, mode='bilinear', align_corners=True)
-        sep_cls_mask = torch.zeros_like(label, device=label.device)
-        for cls in self.sep_classes:
-            sep_cls_mask[label == cls] = 1
-        sep_cls_label = label * sep_cls_mask
-        sep_cls_label[sep_cls_label == 0] = self.num_classes
+        small_pred = F.interpolate(sep_cls_pred, size, mode='bilinear', align_corners=True)
+
+        small_mask = torch.zeros_like(label, device=label.device)
+        for cls in self.sep_small_classes:
+            small_mask[label == cls] = 1
+        small_label = label * small_mask
+        small_label[small_label == 0] = self.num_classes
+
+        big_mask = torch.zeros_like(label, device=label.device)
+        for cls in self.sep_big_classes:
+            big_mask[label == cls] = 1
+        big_label = label * big_mask
+        big_label[big_label == 0] = self.num_classes
 
         if self.aux_loss:
-            loss = self.loss_fn(pred, label)
+            loss = self.loss_fn(pred, big_label.long())
             aux_pred = nn.functional.interpolate(aux_pred, size=size, mode='bilinear', align_corners=True)
             aux_loss = self.loss_fn(aux_pred, label)
 
             return {
                 'loss': loss,
-                'sep_cls_loss': self.loss_fn(sep_cls_pred, sep_cls_label.long()),
+                'sep_cls_loss': self.loss_fn(small_pred, small_label.long()),
                 'aux_loss': aux_loss * self.aux_weight,
             }
         else:
             return {
-                'loss': self.loss_fn(pred, label),
-                'sep_cls_loss': self.loss_fn(sep_cls_pred, sep_cls_label.long())
+                'loss': self.loss_fn(pred, big_label.long()),
+                'sep_cls_loss': self.loss_fn(small_pred, small_label.long())
             }
 
     def forward(self, data_input, label=None):
@@ -94,19 +102,6 @@ class SepClsHead(nn.Module):
         sep_cls_pred = F.interpolate(sep_cls_pred, size=size, mode='bilinear', align_corners=True)
         sep_cls_pred = F.softmax(sep_cls_pred, dim=1)
         temp_pb = torch.max(sep_cls_pred, dim=1)[1]
-
-        mask_pred = temp_pa >= 0
-        mask = temp_pb == 3
-        # temp_pa[mask_pred] = 19
-        # temp_pa[mask] = temp_pb[mask]
-        # temp_pa[mask_pred] = 19
-        temp_pa[mask] = 3
-
-        # temp_pa[mask == 1] = temp_pb[mask == 1]
-
-        # process the sep_classes_pred
-        # for cls in self.sep_classes:
-        #     pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
         return temp_pa
 
 @SEG_HEAD_REGISTRY.register()

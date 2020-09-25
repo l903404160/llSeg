@@ -26,7 +26,7 @@ def register_cityscapes_segmentation(name, metadata, image_root, label_root):
 
     DatasetCatalog.register(name, lambda img_root=image_root, lbl_root=label_root: load_cityscapes_sem_seg_dict(img_root, lbl_root))
     MetadataCatalog.get(name).set(
-        image_root=image_root, label_root=label_root, evaluator_type="sem_seg", **metadata
+        image_root=image_root, label_root=label_root, evaluator_type="city_sem_seg", **metadata
     )
 
 
