@@ -7,6 +7,6 @@ from .blocks import CNNBlockBase
 from .soft_nms_layer import *
 from .nms import *
 from .effnet_layers.ops import *
-from .anchorfree.cornernet_layers import *
-from .anchorfree.border_align import *
+# from .anchorfree.cornernet_layers import *
+# from .anchorfree.border_align import *
 from .naive_group_norm import *

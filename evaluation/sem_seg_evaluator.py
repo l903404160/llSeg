@@ -36,7 +36,6 @@ class SemSegEvaluator(DatasetEvaluator):
             dataset_record["file_name"]: dataset_record["sem_seg_file_name"]
             for dataset_record in DatasetCatalog.get(dataset_name)
         }
-
         meta = MetadataCatalog.get(dataset_name)
         self.colormap = np.array(meta.get('stuff_classes_colormap', default=None))
 
@@ -70,7 +69,11 @@ class SemSegEvaluator(DatasetEvaluator):
 
             # VIS
             color_pred = Image.fromarray(self.colormap[pred].astype(np.uint8))
-            color_pred.save(os.path.join(self._vis_dir, os.path.basename(input["file_name"])))
+            im_name = os.path.basename(input["file_name"])
+            city_name = im_name.split('_')[0]
+            if not os.path.exists(os.path.join(self._vis_dir, city_name)):
+                os.makedirs(os.path.join(self._vis_dir, city_name), exist_ok=True)
+            color_pred.save(os.path.join(self._vis_dir,city_name, im_name ))
 
             with open(self.input_file_to_gt_file[input["file_name"]], "rb") as f:
                 gt = np.array(Image.open(f), dtype=np.int)
@@ -117,9 +120,9 @@ class SemSegEvaluator(DatasetEvaluator):
         union = pos_gt + pos_pred - tp
         iou[acc_valid] = tp[acc_valid] / union[acc_valid]
 
-        macc = np.sum(acc) / np.sum(acc_valid)
-        miou = np.sum(iou) / np.sum(iou_valid)
-        fiou = np.sum(iou * class_weights)
+        macc = np.sum(acc[acc_valid]) / np.sum(acc_valid)
+        miou = np.sum(iou[acc_valid]) / np.sum(iou_valid)
+        fiou = np.sum(iou[acc_valid] * class_weights[acc_valid])
         pacc = np.sum(tp) / np.sum(pos_gt)
 
         res = {}

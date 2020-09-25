@@ -89,12 +89,25 @@ class SepClsHead(nn.Module):
 
         pred = F.interpolate(pred, size=size, mode='bilinear', align_corners=True)
         pred = F.softmax(pred, dim=1)
+        temp_pa = torch.max(pred, dim=1)[1]
+
         sep_cls_pred = F.interpolate(sep_cls_pred, size=size, mode='bilinear', align_corners=True)
         sep_cls_pred = F.softmax(sep_cls_pred, dim=1)
+        temp_pb = torch.max(sep_cls_pred, dim=1)[1]
+
+        mask_pred = temp_pa >= 0
+        mask = temp_pb == 3
+        # temp_pa[mask_pred] = 19
+        # temp_pa[mask] = temp_pb[mask]
+        # temp_pa[mask_pred] = 19
+        temp_pa[mask] = 3
+
+        # temp_pa[mask == 1] = temp_pb[mask == 1]
+
         # process the sep_classes_pred
         # for cls in self.sep_classes:
         #     pred[:, cls, :, :] = (pred[:, cls, :, :] + sep_cls_pred[:, cls, :, :]) / 2
-        return pred
+        return temp_pa
 
 @SEG_HEAD_REGISTRY.register()
 def sepclshead_builder(cfg):
