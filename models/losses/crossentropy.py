@@ -55,3 +55,19 @@ class OHEMCrossEntropyLoss(nn.Module):
         else:
             raise NotImplementedError
 
+class PlainCrossEntropyLoss(nn.Module):
+    def __init__(self, cfg):
+        super(PlainCrossEntropyLoss, self).__init__()
+        self.loss_func = CrossEntropyLoss(ignore_index=cfg.MODEL.IGNORE_LABEL)
+
+    def forward(self, pred, label):
+        assert pred.dim() == 4
+        assert label.dim() == 3
+        assert pred.size(0) == label.size(0), "Batch size should be same, got {} in prediction and {} in label ".format(
+            pred.size(0), label.size(0))
+        assert pred.size(2) == label.size(1), "H should be same, got {} in prediction and {} in label ".format(
+            pred.size(0), label.size(0))
+        assert pred.size(3) == label.size(2), "W should be same, got {} in prediction and {} in label ".format(
+            pred.size(0), label.size(0))
+
+        return self.loss_func(pred, label)

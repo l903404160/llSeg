@@ -2,7 +2,7 @@ from .crossentropy import OHEMCrossEntropyLoss, PlainCrossEntropyLoss
 
 loss_dict = {
     'CELoss': PlainCrossEntropyLoss,
-    'OHEMCELoss': OHEMCrossEntropyLoss
+    'OHEMCELoss': OHEMCrossEntropyLoss,
 }
 
 

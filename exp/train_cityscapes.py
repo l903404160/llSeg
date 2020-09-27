@@ -1,6 +1,6 @@
 import os
 import sys
-sys.path.append('/home/haida_sunxin/lqx/code/llseg')
+sys.path.append('/home/haida_sunxin/szq/spnet')
 from configs import get_sem_seg_config
 
 import engine.hooks as hooks
@@ -58,13 +58,13 @@ def main(args):
 
 if __name__ == '__main__':
     import os
-    os.environ['CUDA_VISIBLE_DEVICES'] = '4,5,6,7'
+    os.environ['CUDA_VISIBLE_DEVICES'] = '0,1,2,3'
     args = default_argument_setup().parse_args()
     args.num_gpus = 4
     # args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/baseline.yaml"
-    args.config_file = "/home/haida_sunxin/lqx/code/llseg/configs/configs_files/sem_seg/models/hanet.yaml"
+    args.config_file = "/home/haida_sunxin/szq/spnet/configs/configs_files/sem_seg/models/spnet.yaml"
 
-    args.eval_only = True
+    args.eval_only = False
     args.resume = True
 
     launch(

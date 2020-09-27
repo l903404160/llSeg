@@ -8,7 +8,7 @@ from . import SEG_BACKBONE_REGISTRY
 class Bottleneck(nn.Module):
     expansion = 4
     def __init__(self, inplanes, planes, stride=1, dilation=1,
-                 downsample=None, previous_dilation=1, norm_layer=None, norm_mom=3e-4):
+                 downsample=None, previous_dilation=1, norm_layer=None, norm_mom=3e-4, spm_on=False):
         super().__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -23,6 +23,9 @@ class Bottleneck(nn.Module):
         self.downsample = downsample
         self.dilation = dilation
         self.stride = stride
+        self.spm = None
+        if spm_on:
+            self.spm = SPBlock(planes, planes, norm_layer=norm_layer)
 
     def forward(self, x):
         residual = x
@@ -34,6 +37,9 @@ class Bottleneck(nn.Module):
         out = self.conv2(out)
         out = self.bn2(out)
         out = self.relu(out)
+
+        if self.spm is not None:
+            out = out * self.spm(out)
 
         out = self.conv3(out)
         out = self.bn3(out)
@@ -47,10 +53,44 @@ class Bottleneck(nn.Module):
         return out
 
 
+class SPBlock(nn.Module):
+    def __init__(self, inplanes, outplanes, norm_layer=None):
+        super(SPBlock, self).__init__()
+        midplanes = outplanes
+        self.conv1 = nn.Conv2d(inplanes, midplanes, kernel_size=(3, 1), padding=(1, 0), bias=False)
+        self.bn1 = norm_layer(midplanes)
+        self.conv2 = nn.Conv2d(inplanes, midplanes, kernel_size=(1, 3), padding=(0, 1), bias=False)
+        self.bn2 = norm_layer(midplanes)
+        self.conv3 = nn.Conv2d(midplanes, outplanes, kernel_size=1, bias=True)
+        self.pool1 = nn.AdaptiveAvgPool2d((None, 1))
+        self.pool2 = nn.AdaptiveAvgPool2d((1, None))
+        self.relu = nn.ReLU(inplace=False)
+
+    def forward(self, x):
+        _, _, h, w = x.size()
+        x1 = self.pool1(x)
+        x1 = self.conv1(x1)
+        x1 = self.bn1(x1)
+        x1 = x1.expand(-1, -1, h, w)
+        #x1 = F.interpolate(x1, (h, w))
+
+        x2 = self.pool2(x)
+        x2 = self.conv2(x2)
+        x2 = self.bn2(x2)
+        x2 = x2.expand(-1, -1, h, w)
+        #x2 = F.interpolate(x2, (h, w))
+
+        x = self.relu(x1 + x2)
+        x = self.conv3(x).sigmoid()
+        return x
+
+
 class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=1000, stride=8, norm_layer=None, norm_mom=3e-4, grids=None):
         self.inplanes = 128
         super().__init__()
+
+        self.spm_on = True
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self.conv1 = nn.Sequential(
@@ -101,6 +141,9 @@ class ResNet(nn.Module):
                           kernel_size=1, stride=stride, bias=False),
                 norm_layer(planes * block.expansion, momentum=norm_mom))
 
+        spm_on = False
+        if planes == 512:
+            spm_on = self.spm_on
         layers = []
         if grids is None:
             grids = [1] * blocks
@@ -108,23 +151,25 @@ class ResNet(nn.Module):
         if dilation == 1:
             layers.append(block(self.inplanes, planes, stride, dilation=1,
                                 downsample=downsample,
-                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
+                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom, spm_on = spm_on))
         elif dilation == 2:
             layers.append(block(self.inplanes, planes, stride, dilation=2,
                                 downsample=downsample,
-                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
+                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom, spm_on = spm_on))
         elif dilation == 4:
             layers.append(block(self.inplanes, planes, stride, dilation=4,
                                 downsample=downsample,
-                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
+                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom, spm_on = spm_on))
         else:
             raise RuntimeError('=> unknown dilation size: {}'.format(dilation))
 
         self.inplanes = planes * block.expansion
         for i in range(1, blocks):
+            if i >= blocks - 1 or planes == 512:
+                spm_on = self.spm_on
             layers.append(block(self.inplanes, planes,
                                 dilation=dilation * grids[i],
-                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom))
+                                previous_dilation=dilation, norm_layer=norm_layer, norm_mom=norm_mom, spm_on = spm_on))
 
         return nn.Sequential(*layers)
 

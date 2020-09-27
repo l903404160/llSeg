@@ -91,6 +91,10 @@ _C.MODEL.HANET.POOLING = 'mean'
 _C.MODEL.HANET.DROPOUT_PROB = 0.1
 _C.MODEL.HANET.POS_NOISE = 0.5
 
+
+##Spnet
+_C.MODEL.SPNET = CN()
+_C.MODEL.SPNET.WITH_GLOBAL = True
 # Need implemented by model
 
 # SOLVER
